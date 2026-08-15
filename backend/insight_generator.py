@@ -1,99 +1,99 @@
-from __future__ import annotations
- 
-import os
 from typing import Any
- 
-import anthropic
- 
-_client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-_MODEL = "claude-sonnet-4-6"
- 
-_SYSTEM_PROMPT = """You are AIRGUARD AI, a personal environment-wellness explainer.
- 
-Rules:
-- You only ever receive abstracted numeric/statistical parameters, never raw journal text.
-- You are not a doctor. Never diagnose, never suggest medication, never claim clinical causation.
-- Speak plainly: name the environmental factors that changed, explain why a pattern was flagged
-  using the numbers given, and suggest ONE simple, low-effort adjustment.
-- Keep responses to 2-4 sentences unless asked for more detail.
-- Ground every claim strictly in the numbers provided — never invent a statistic.
-"""
- 
- 
-def _format_patterns_for_prompt(patterns: list[dict]) -> str:
-    lines = []
-    for p in patterns:
-        lines.append(
-            f"- {p['title']} | matched {p['matched_days']}/{p['total_days']} days | "
-            f"confidence {p['confidence_pct']}% | stats: {p['stats']}"
+
+
+def generate_pattern_summary(
+    patterns: list[dict],
+    baseline: dict[str, Any]
+) -> str:
+
+    if not patterns:
+        return (
+            "We couldn't identify any clear patterns yet. "
+            "Keep logging your experiences to improve future insights."
         )
-    return "\n".join(lines) or "No confirmed patterns yet."
- 
- 
-def generate_pattern_summary(patterns: list[dict], baseline: dict[str, Any]) -> str:
-    user_content = (
-        "Here is this user's structured pattern data (last 30 days).\n\n"
-        f"Baseline: {baseline}\n\n"
-        f"Detected patterns:\n{_format_patterns_for_prompt(patterns)}\n\n"
-        "Write a short personal summary (3-5 sentences) highlighting the "
-        "strongest pattern first."
+
+    strongest_pattern = max(
+        patterns,
+        key=lambda p: p["confidence_pct"]
     )
- 
-    response = _client.messages.create(
-        model=_MODEL,
-        max_tokens=400,
-        system=_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_content}],
+
+    return (
+        f"Your strongest pattern is "
+        f"'{strongest_pattern['title']}'. "
+        f"It appeared on "
+        f"{strongest_pattern['matched_days']} of "
+        f"{strongest_pattern['total_days']} tracked days "
+        f"with a confidence of "
+        f"{strongest_pattern['confidence_pct']}%."
     )
-    return _extract_text(response)
- 
- 
-def generate_flag_explanation(current_conditions: dict, matched_pattern: dict) -> str:
-    user_content = (
-        f"Today's conditions: {current_conditions}\n\n"
-        f"This matches an existing confirmed pattern: {matched_pattern}\n\n"
-        "Explain in 2-3 sentences why today was flagged, referencing the "
-        "specific numbers, and end with one concrete suggestion."
+
+
+def generate_daily_recommendations(
+    current_conditions: dict
+) -> list[str]:
+
+    recommendations = []
+
+    if (current_conditions.get("aqi") or 0) > 120:
+        recommendations.append(
+            "Reduce outdoor exposure if possible."
+        )
+
+    if (current_conditions.get("humidity_pct") or 0) > 70:
+        recommendations.append(
+            "Stay hydrated."
+        )
+
+    if (current_conditions.get("temperature_c") or 0) > 33:
+        recommendations.append(
+            "Avoid excessive heat during the day."
+        )
+
+    if (current_conditions.get("uv_index") or 0) > 7:
+        recommendations.append(
+            "Limit direct sun exposure."
+        )
+
+    return recommendations
+
+
+def generate_flag_explanation(
+    current_conditions: dict,
+    pattern: dict
+) -> str:
+
+    recommendations = generate_daily_recommendations(
+        current_conditions
     )
-    response = _client.messages.create(
-        model=_MODEL,
-        max_tokens=250,
-        system=_SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_content}],
+
+    advice = (
+        recommendations[0]
+        if recommendations
+        else "Continue monitoring your symptoms."
     )
-    return _extract_text(response)
- 
- 
+
+    return (
+        f"Today's environmental conditions resemble your "
+        f"'{pattern['title']}' pattern. "
+        f"{advice}"
+    )
+
+
 def generate_chat_reply(
     user_question: str,
     *,
     current_conditions: dict,
     baseline: dict,
     patterns: list[dict],
-    conversation_history: list[dict] | None = None,
+    conversation_history=None
 ) -> str:
-    context_block = (
-        f"Current conditions: {current_conditions}\n"
-        f"User's baseline: {baseline}\n"
-        f"Confirmed patterns:\n{_format_patterns_for_prompt(patterns)}"
+
+    if patterns:
+        return generate_pattern_summary(
+            patterns,
+            baseline
+        )
+
+    return (
+        "I don't have enough information to identify a pattern yet."
     )
- 
-    messages = list(conversation_history or [])
-    messages.append({
-        "role": "user",
-        "content": f"{context_block}\n\nUser question: {user_question}",
-    })
- 
-    response = _client.messages.create(
-        model=_MODEL,
-        max_tokens=300,
-        system=_SYSTEM_PROMPT,
-        messages=messages,
-    )
-    return _extract_text(response)
- 
- 
-def _extract_text(response: anthropic.types.Message) -> str:
-    parts = [block.text for block in response.content if getattr(block, "type", None) == "text"]
-    return "\n".join(parts).strip()
- 
