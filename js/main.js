@@ -117,11 +117,42 @@
     return records;
   }
 
-  const daysData = generate30Days();
-  const todayEntry = daysData[daysData.length - 1];
-  const yesterdayEntry = daysData[daysData.length - 2];
-  const exampleEntry = daysData[daysData.length - 4]; // Aug 12
+  function getCachedUserData() {
+    try { return JSON.parse(localStorage.getItem("airguard_user_data") || "null"); } catch { return null; }
+  }
 
+  function buildUserDays(data) {
+    return (data?.checkins || []).slice().reverse().map((item, index) => ({
+      id: item.id || `checkin-${index}`,
+      date: new Date(item.createdAt || Date.now()),
+      dateLabel: new Date(item.createdAt || Date.now()).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      dayLabel: new Date(item.createdAt || Date.now()).toLocaleDateString(undefined, { weekday: "short" }),
+      fullDateStr: new Date(item.createdAt || Date.now()).toLocaleDateString(undefined, { dateStyle: "full" }),
+      temp: item.environment?.temperature_c ?? null,
+      humidity: item.environment?.humidity_pct ?? null,
+      aqi: item.environment?.aqi ?? null,
+      pm25: item.environment?.pm2_5 ?? null,
+      pm10: item.environment?.pm10 ?? null,
+      uv: item.environment?.uv_index ?? null,
+      pollen: item.environment?.pollen_level ?? null,
+      energy: item.energy,
+      comfort: item.comfort,
+      sleep: item.sleep,
+      movement: item.movement ?? null,
+      symptoms: item.symptoms || [],
+      activity: item.activity || "Indoors",
+      notes: item.notes || ""
+    }));
+  }
+
+  const cachedUserData = getCachedUserData();
+  const demoMode = localStorage.getItem("airguard_demo") === "true";
+  let daysData = demoMode ? generate30Days() : buildUserDays(cachedUserData);
+  let todayEntry = daysData[daysData.length - 1];
+  let yesterdayEntry = daysData[daysData.length - 2];
+  let exampleEntry = daysData[daysData.length - 4];
+
+  if (demoMode) {
   todayEntry.aqi = 128;
   todayEntry.temp = 34;
   todayEntry.humidity = 72;
@@ -153,6 +184,7 @@
   exampleEntry.symptoms = ["Headache", "Congestion"];
   exampleEntry.activity = "Outside";
   exampleEntry.notes = "Walked home from school.";
+  }
 
   // Pattern Database
   const PATTERNS = {
@@ -299,6 +331,168 @@
     loadCurrentEnvironment
   };
 
+  window.AIRGUARD.ready = window.AIRGUARD_FIREBASE?.ready || Promise.resolve(null);
+  window.AIRGUARD.getUserData = () => window.AIRGUARD_FIREBASE?.getCachedData?.() || null;
+  window.AIRGUARD.saveCheckin = async (checkin) => {
+    const user = window.AIRGUARD_FIREBASE?.currentUser?.();
+    if (user) return window.AIRGUARD_FIREBASE.saveCheckin(user, checkin);
+    if (localStorage.getItem("airguard_demo") === "true") return null;
+    throw new Error("Please sign in before saving personal data.");
+  };
+  window.AIRGUARD.saveActivity = async (activity) => {
+    const user = window.AIRGUARD_FIREBASE?.currentUser?.() || window.AIRGUARD_FIREBASE?.getCachedData?.();
+    if (!user) throw new Error('Please sign in before saving activities.');
+    return window.AIRGUARD_FIREBASE.saveActivity(user, activity);
+  };
+  window.AIRGUARD.fetchEnvironmentHistory = async (lat, lng, days) => {
+    const params = `lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&days=${days}`;
+    if (window.AIRGUARD_ENV_API) {
+      const response = await fetch(`${window.AIRGUARD_ENV_API}/environment/history?${params}`);
+      if (response.ok) return (await response.json()).days || [];
+    }
+    const [weatherResponse, airResponse] = await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=temperature_2m_mean,relative_humidity_2m_mean&past_days=${Math.min(days, 92)}&forecast_days=1&timezone=auto`),
+      fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lng}&hourly=us_aqi&past_days=${Math.min(days, 92)}&forecast_days=1&timezone=auto`)
+    ]);
+    if (!weatherResponse.ok || !airResponse.ok) throw new Error('Environmental history is unavailable.');
+    const weather = await weatherResponse.json();
+    const air = await airResponse.json();
+    const aqiByDate = {};
+    (air.hourly?.time || []).forEach((time, index) => {
+      const date = time.slice(0, 10);
+      const value = air.hourly.us_aqi?.[index];
+      if (value != null) (aqiByDate[date] ||= []).push(value);
+    });
+    return (weather.daily?.time || []).map((date, index) => ({
+      date, dateLabel: date.slice(5), dayLabel: date.slice(5),
+      temp: weather.daily.temperature_2m_mean?.[index] ?? null,
+      humidity: weather.daily.relative_humidity_2m_mean?.[index] ?? null,
+      aqi: aqiByDate[date]?.length ? Math.round(aqiByDate[date].reduce((a, b) => a + b, 0) / aqiByDate[date].length) : null
+    }));
+  };
+  window.addEventListener('airguard-data-ready', (event) => {
+    const data = event.detail;
+    if (!data) return;
+    localStorage.removeItem('airguard_demo');
+    daysData = buildUserDays(data);
+    todayEntry = daysData[daysData.length - 1];
+    yesterdayEntry = daysData[daysData.length - 2];
+    exampleEntry = daysData[daysData.length - 4];
+    applyUserMode(data);
+  });
+
+  function applyUserMode(data) {
+    if (localStorage.getItem('airguard_demo') === 'true' || !data) return;
+    document.body.dataset.airguardMode = 'user';
+    const userLocation = data.profile?.location || getSavedLocation();
+    const name = data.profile?.name || 'there';
+    document.querySelectorAll('#currentLocationLabel, #comparisonLocationLabel').forEach(el => el.textContent = userLocation.label);
+    const activityLocation = document.getElementById('actLocation');
+    if (activityLocation) activityLocation.value = userLocation.label;
+    const title = document.querySelector('.page-title');
+    if (title && /Good morning/i.test(title.textContent)) title.textContent = `Welcome, ${name}`;
+    const subtitle = document.querySelector('.page-subtitle');
+    if (subtitle && subtitle.textContent.includes('India')) subtitle.textContent = `${userLocation.label} · Today`;
+    const sidebarBottom = document.querySelector('.sidebar-bottom');
+    if (sidebarBottom && !document.getElementById('profileSummary')) {
+      const profile = document.createElement('div');
+      profile.id = 'profileSummary';
+      profile.style.cssText = 'display:flex;align-items:center;gap:9px;padding:12px 14px;margin-bottom:6px;';
+      const initials = (name || 'U').split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase();
+      profile.innerHTML = `<div style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--purple-bg);color:var(--purple-fg);font-size:11px;font-weight:800;">${initials}</div><div style="min-width:0;"><div style="font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div><div style="font-size:10px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${data.email || ''}</div></div>`;
+      sidebarBottom.prepend(profile);
+    }
+    const timelineActivities = document.getElementById('timelineActivityList');
+    if (timelineActivities) {
+      const activities = data.activities || [];
+      timelineActivities.innerHTML = activities.length ? activities.map(item => `<div style="padding:10px 0;border-bottom:1px solid var(--border-soft);"><b>${item.activity || 'Activity'}</b> · ${item.duration || '—'} · ${item.plannedTime || '—'}<br><span class="secondary-text" style="font-size:12px;">${new Date(item.createdAt).toLocaleString()} · ${item.location || 'Saved location'}</span></div>`).join('') : 'No activities recorded yet.';
+    }
+
+    // These surfaces previously contained prewritten sample insights. They
+    // are intentionally absent for signed-in users until real backend data
+    // exists; only the explicit demo session may display them.
+    const dashboardInsight = document.getElementById('dashboardPersonalInsight');
+    if (dashboardInsight) {
+      dashboardInsight.querySelectorAll(':scope > *:not(.mini-chart-wrap)').forEach(el => el.remove());
+      const empty = document.createElement('p');
+      empty.className = 'secondary-text';
+      empty.textContent = data.checkins?.length ? 'Your personal comparison graph will populate as more check-ins are recorded.' : 'Your personal graph will appear after you record check-ins.';
+      dashboardInsight.insertBefore(empty, dashboardInsight.firstChild);
+      const canvas = dashboardInsight.querySelector('#comfortComparisonChart');
+      if (canvas && window.Chart?.getChart(canvas)) window.Chart.getChart(canvas).destroy();
+    }
+    const wellnessGrid = document.getElementById('dashboardWellnessGrid');
+    if (wellnessGrid) {
+      const checkins = data.checkins || [];
+      const latest = checkins[0];
+      const metrics = [
+        ['ENERGY', latest?.energy, 'var(--purple)', 'energy'],
+        ['COMFORT', latest?.comfort, 'var(--green)', 'comfort'],
+        ['SLEEP', latest?.sleep, 'var(--blue)', 'sleep'],
+        ['MOVEMENT', latest?.movement, 'var(--green)', 'movement']
+      ];
+      wellnessGrid.innerHTML = metrics.map(([label, value, color]) => {
+        const display = value == null ? '—' : label === 'SLEEP' ? `${value}h` : label === 'MOVEMENT' ? `${value} min` : `${value} / 10`;
+        const width = value == null ? 0 : label === 'SLEEP' ? Math.min(100, Number(value) / 8 * 100) : label === 'MOVEMENT' ? Math.min(100, Number(value) / 60 * 100) : Number(value) * 10;
+        return `<div class="card stat-card"><div class="stat-label">${label}</div><div class="stat-value">${display}</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:${width}%;background:${color};"></div></div><div class="stat-caption">${value == null ? 'Enter data to view stats' : 'From your latest check-in'}</div></div>`;
+      }).join('');
+    }
+    const weeklySummary = document.getElementById('weeklySummaryGrid');
+    if (weeklySummary) weeklySummary.querySelectorAll('.stat-card').forEach(card => {
+      const value = card.querySelector('.stat-value');
+      const caption = card.querySelector('.stat-caption');
+      if (value) value.textContent = 'Not available yet';
+      if (caption) caption.textContent = 'Awaiting enough weekly data';
+    });
+    const weeklyPattern = document.getElementById('weeklyPatternCard');
+    if (weeklyPattern) {
+      const title = weeklyPattern.querySelector('.card-heading');
+      const description = weeklyPattern.querySelector('.body-text');
+      if (title) title.textContent = 'Pattern name pending';
+      if (description) description.textContent = 'Description will appear after enough personal check-ins are recorded.';
+      weeklyPattern.querySelectorAll('.pattern-meta-item .v').forEach(item => item.textContent = 'Not available yet');
+      const evidence = weeklyPattern.querySelector('a');
+      if (evidence) evidence.textContent = 'Evidence unavailable yet';
+    }
+    document.getElementById('dashboardSuggestionCard')?.remove();
+    document.getElementById('environmentBaselineCard')?.remove();
+    const activityWindows = document.getElementById('activityForecastWindows');
+    if (activityWindows) activityWindows.innerHTML = '<div class="time-slot-card"><b>—</b><span>—</span></div><div class="time-slot-card"><b>—</b><span>—</span></div><div class="time-slot-card"><b>—</b><span>—</span></div><div class="time-slot-card"><b>—</b><span>—</span></div>';
+    const activityContext = document.getElementById('activityPersonalContext');
+    if (activityContext) {
+      const contextText = activityContext.querySelector('#actInsightLine');
+      const suggestion = activityContext.querySelector('#actSuggestionText');
+      if (contextText) contextText.textContent = 'Ready to record this activity with its live environmental snapshot.';
+      if (suggestion) suggestion.textContent = 'Choose your activity details above, then use Start Activity & Save.';
+    }
+    document.querySelectorAll('.pattern-card').forEach(card => {
+      const title = card.querySelector('.pattern-title');
+      if (title) title.textContent = 'Pattern name pending';
+      const badge = card.querySelector('.pattern-badge');
+      if (badge) badge.textContent = 'Awaiting data';
+      card.querySelectorAll('.pattern-description').forEach(el => el.textContent = 'Description will appear after enough personal check-ins are recorded.');
+      card.querySelectorAll('.pattern-stats .v, .confidence-pct').forEach(el => el.textContent = 'Not available yet');
+      card.querySelectorAll('.confidence-bar-fill').forEach(el => el.style.width = '0%');
+      const link = card.querySelector('a');
+      if (link) link.textContent = 'Evidence unavailable yet';
+    });
+    document.querySelectorAll('.ai-summary-card .ai-summary-body, .ai-summary-card .ai-refresh-row, .ai-prompts-row').forEach(el => el.textContent = 'Awaiting personal data');
+    const aiChat = document.getElementById('aiChatBox');
+    if (aiChat) aiChat.innerHTML = '<div class="ai-msg"><div class="ai-avatar bot">✦</div><div class="ai-bubble"><b>AIRGUARD AI</b><p>Hello — I’m AIRGUARD AI. Add personal check-ins and environmental context, and I’ll be ready to help you explore them.</p></div></div>';
+    ['dispTemp', 'dispHumidity', 'dispAqi'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+    ['recentPatternChart', 'env7DayChart', 'weekEnvChart'].forEach(id => {
+      const canvas = document.getElementById(id);
+      if (!canvas || daysData.length) return;
+      const parent = canvas.parentElement;
+      if (parent && !parent.querySelector('.chart-empty-state')) {
+        const empty = document.createElement('p');
+        empty.className = 'secondary-text chart-empty-state';
+        empty.textContent = 'Not enough personal data yet — this graph will fill in after your first check-ins.';
+        parent.appendChild(empty);
+      }
+    });
+  }
+
   // =====================================================
   // UI HELPERS (TOAST, MODALS, TOOLTIPS)
   // =====================================================
@@ -339,12 +533,24 @@
 
   // DOM Content Loaded Handler
   document.addEventListener('DOMContentLoaded', () => {
+    const page = location.pathname.split('/').pop() || 'index.html';
+    const publicPages = new Set(['', 'index.html', 'auth.html', 'onboarding.html']);
+    if (!publicPages.has(page)) {
+      const waitForAuth = () => {
+        if (!window.AIRGUARD_FIREBASE) return setTimeout(waitForAuth, 50);
+        window.AIRGUARD_FIREBASE.ready.then(userData => {
+          if (!userData && localStorage.getItem('airguard_demo') !== 'true') window.location.href = 'onboarding.html';
+        });
+      };
+      waitForAuth();
+    }
     initTooltips();
     initModals();
     initMobileNav();
     initThemeState();
     initSliders();
     initChips();
+    applyUserMode(getCachedUserData());
     updateCurrentEnvironment();
     updateCurrentTime();
     setInterval(updateCurrentTime, 60000);
@@ -362,7 +568,7 @@
 
     let tipTimer;
     document.addEventListener('mouseenter', (e) => {
-      const el = e.target.closest('[data-tip]');
+      const el = e.target instanceof Element ? e.target.closest('[data-tip]') : null;
       if (!el) return;
       clearTimeout(tipTimer);
       tipEl.textContent = el.dataset.tip;
@@ -373,7 +579,7 @@
     }, true);
 
     document.addEventListener('mouseleave', (e) => {
-      if (e.target.closest('[data-tip]')) {
+      if (e.target instanceof Element && e.target.closest('[data-tip]')) {
         tipTimer = setTimeout(() => tipEl.classList.remove('show'), 80);
       }
     }, true);
@@ -385,12 +591,12 @@
       if (e.target.classList.contains('modal-overlay')) {
         e.target.classList.remove('open');
       }
-      const closeBtn = e.target.closest('[data-close-modal]');
+      const closeBtn = e.target instanceof Element ? e.target.closest('[data-close-modal]') : null;
       if (closeBtn) {
         const modal = closeBtn.closest('.modal-overlay');
         if (modal) modal.classList.remove('open');
       }
-      const openBtn = e.target.closest('[data-open-modal]');
+      const openBtn = e.target instanceof Element ? e.target.closest('[data-open-modal]') : null;
       if (openBtn) {
         openModal(openBtn.dataset.openModal);
       }
@@ -455,7 +661,7 @@
   function initChips() {
     document.querySelectorAll('.chip-row').forEach(row => {
       row.addEventListener('click', (e) => {
-        const chip = e.target.closest('.chip');
+        const chip = e.target instanceof Element ? e.target.closest('.chip') : null;
         if (!chip) return;
         const val = chip.dataset.val;
         if (val === 'None') {
@@ -472,15 +678,23 @@
 
   // fetch curent conditions from the location with latitude and longitude.
   async function fetchCurrentConditions(lat, lng) {
-    const response = await fetch(
-      `http://127.0.0.1:5001/environment/current?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}`
-    );
-
-    if (!response.ok) {
-      throw new Error(`Environment request failed: ${response.status}`);
+    const params = `lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}`;
+    // Use the Flask service when the host app provides one. Static hosting uses
+    // the same live Open-Meteo sources directly and does not require localhost.
+    if (window.AIRGUARD_ENV_API) {
+      const response = await fetch(`${window.AIRGUARD_ENV_API}/environment/current?${params}`);
+      if (response.ok) return await response.json();
     }
 
-    return await response.json();
+    const [weatherResponse, airResponse] = await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,apparent_temperature,relative_humidity_2m,uv_index&timezone=auto`),
+      fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lng}&current=us_aqi,pm2_5,pm10,grass_pollen,birch_pollen&timezone=auto`)
+    ]);
+    if (!weatherResponse.ok || !airResponse.ok) throw new Error('Live environmental data is unavailable.');
+    const weather = (await weatherResponse.json()).current || {};
+    const air = (await airResponse.json()).current || {};
+    const pollen = Math.max(air.grass_pollen || 0, air.birch_pollen || 0);
+    return { aqi: air.us_aqi, pm2_5: air.pm2_5, pm10: air.pm10, temperature_c: weather.temperature_2m, feels_like_c: weather.apparent_temperature, humidity_pct: weather.relative_humidity_2m, uv_index: weather.uv_index, pollen_level: pollen < 20 ? 'Low' : pollen < 50 ? 'Moderate' : 'High', timestamp: weather.time };
   }
 
   // load the current location 
@@ -525,9 +739,15 @@
       if (tempEl) {
           tempEl.textContent = `${roundedTemp}°C`;
 
-          tempEl.parentElement.dataset.tip =
+          if (tempEl.parentElement) tempEl.parentElement.dataset.tip =
               `Temperature is ${roundedTemp}°C today (${getTempLevel(temp)}).`;
       }
+      const envTemp = document.getElementById('envTemperatureValue');
+      if (envTemp) envTemp.textContent = `${roundedTemp}°C`;
+      const activityTemp = document.getElementById('dispTemp');
+      if (activityTemp) activityTemp.textContent = `${roundedTemp}°C`;
+      const envFeels = document.getElementById('envFeelsLikeCaption');
+      if (envFeels && conditions.feels_like_c != null) envFeels.textContent = `Feels like ${Math.round(conditions.feels_like_c)}°C`;
 
       // Comparison temperature
       const comparisonTemp =
@@ -559,9 +779,15 @@
       if (aqiEl) {
           aqiEl.textContent = aqi;
 
-          aqiEl.parentElement.dataset.tip =
+          if (aqiEl.parentElement) aqiEl.parentElement.dataset.tip =
               `AQI is ${aqi} today.`;
       }
+      const envAqi = document.getElementById('envAqiValue');
+      if (envAqi) envAqi.textContent = aqi;
+      const activityAqi = document.getElementById('dispAqi');
+      if (activityAqi) activityAqi.textContent = aqi;
+      const envPm25 = document.getElementById('envPm25Value');
+      if (envPm25 && conditions.pm2_5 != null) envPm25.innerHTML = `${Math.round(conditions.pm2_5)} <span style="font-size:14px;font-weight:600">μg/m³</span>`;
 
       // AQI comparison
       const comparisonAQI =
@@ -598,9 +824,13 @@
           humidityEl.textContent =
               `${roundedHumidity}%`;
 
-          humidityEl.parentElement.dataset.tip =
+          if (humidityEl.parentElement) humidityEl.parentElement.dataset.tip =
               `Humidity is ${roundedHumidity}% today.`;
       }
+      const envHumidity = document.getElementById('envHumidityValue');
+      if (envHumidity) envHumidity.textContent = `${roundedHumidity}%`;
+      const activityHumidity = document.getElementById('dispHumidity');
+      if (activityHumidity) activityHumidity.textContent = `${roundedHumidity}%`;
 
       // Humidity comparison
       const comparisonHumidity =
@@ -644,9 +874,11 @@
       if (uvEl) {
           uvEl.textContent = level;
 
-          uvEl.parentElement.dataset.tip =
+          if (uvEl.parentElement) uvEl.parentElement.dataset.tip =
               `UV index is ${uv} (${level}).`;
       }
+      const envUv = document.getElementById('envUvValue');
+      if (envUv) envUv.textContent = level;
   }
 
 
@@ -655,15 +887,15 @@
       const pollenEl =
           document.getElementById("currentPollen");
 
-      if (!pollenEl) return;
-
       const level = conditions.pollen_level;
 
       if (!level) return;
 
-      pollenEl.textContent = level;
+      if (pollenEl) pollenEl.textContent = level;
+      const envPollen = document.getElementById('envPollenValue');
+      if (envPollen) envPollen.textContent = level;
 
-      pollenEl.parentElement.dataset.tip =
+      if (pollenEl?.parentElement) pollenEl.parentElement.dataset.tip =
           `Pollen levels are ${level} today.`;
   }
 
