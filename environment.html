@@ -157,48 +157,48 @@
 
           <div class="card stat-card" data-tip="Air Quality Index measures overall outdoor particulate pollution.">
             <div class="stat-label">AQI</div>
-            <div class="stat-value" style="color:var(--amber-fg);">128</div>
-            <div class="stat-caption">Moderately elevated</div>
+            <div class="stat-value" id="envAqiValue" style="color:var(--amber-fg);">—</div>
+            <div class="stat-caption">Live reading</div>
           </div>
 
           <div class="card stat-card"
             data-tip="Fine particulate matter under 2.5 microns, small enough to enter deep lung tissue.">
             <div class="stat-label">PM2.5</div>
-            <div class="stat-value" style="color:var(--blue-fg);">34 <span
+            <div class="stat-value" id="envPm25Value" style="color:var(--blue-fg);">— <span
                 style="font-size:14px; font-weight:600;">μg/m³</span></div>
-            <div class="stat-caption">WHO Guide: &lt;15 μg/m³</div>
+            <div class="stat-caption">Live reading</div>
           </div>
 
           <div class="card stat-card" data-tip="Ambient dry-bulb temperature measured in shaded outdoor air.">
             <div class="stat-label">TEMPERATURE</div>
-            <div class="stat-value" style="color:var(--red-fg);">34°C</div>
-            <div class="stat-caption">Feels like 38°C</div>
+            <div class="stat-value" id="envTemperatureValue" style="color:var(--red-fg);">—</div>
+            <div class="stat-caption" id="envFeelsLikeCaption">Live reading</div>
           </div>
 
           <div class="card stat-card"
             data-tip="Relative humidity percentage. High humidity reduces natural sweat cooling.">
             <div class="stat-label">HUMIDITY</div>
-            <div class="stat-value" style="color:var(--blue-fg);">72%</div>
-            <div class="stat-caption">High moisture index</div>
+            <div class="stat-value" id="envHumidityValue" style="color:var(--blue-fg);">—</div>
+            <div class="stat-caption">Live reading</div>
           </div>
 
           <div class="card stat-card" data-tip="Ultraviolet index. High index requires UV protection outdoors.">
             <div class="stat-label">UV INDEX</div>
-            <div class="stat-value" style="color:var(--purple-fg);">High</div>
-            <div class="stat-caption">Index 8 of 12</div>
+            <div class="stat-value" id="envUvValue" style="color:var(--purple-fg);">—</div>
+            <div class="stat-caption">Live reading</div>
           </div>
 
           <div class="card stat-card" data-tip="Airborne biological particulate count (tree, grass and weed pollen).">
             <div class="stat-label">POLLEN</div>
-            <div class="stat-value" style="color:var(--green-fg);">Moderate</div>
-            <div class="stat-caption">Stable trend</div>
+            <div class="stat-value" id="envPollenValue" style="color:var(--green-fg);">—</div>
+            <div class="stat-caption">Live reading</div>
           </div>
 
         </div>
 
         <!-- COMPARED WITH YOUR USUAL CONDITIONS SECTION -->
         <h2 class="section-heading">Compared with your usual conditions</h2>
-        <div class="card" style="margin-bottom: 24px;">
+        <div class="card" id="environmentBaselineCard" style="margin-bottom: 24px;">
           <p class="secondary-text" style="margin-bottom: 16px;">How today's environment in <span id="comparisonLocationLabel">Jaipur, India</span> compares to your
             30-day baseline:</p>
 
@@ -234,7 +234,14 @@
         </div>
 
         <!-- 7-DAY ENVIRONMENT CHART -->
-        <h2 class="section-heading">7-Day Environment Forecast &amp; History</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+          <h2 class="section-heading" style="margin-bottom:0;">Environment History</h2>
+          <div class="timeline-controls" id="environmentRangeControls" style="margin-bottom:0;">
+            <button class="toggle-btn active" data-env-range="7">7 days</button>
+            <button class="toggle-btn" data-env-range="30">30 days</button>
+            <button class="toggle-btn" data-env-range="90">90 days</button>
+          </div>
+        </div>
         <div class="card">
           <div class="chart-card-top">
             <div>
@@ -276,7 +283,12 @@
     </div>
   </div>
 
-  <script src="js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase.js"></script>
+<script src="js/main.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -286,9 +298,18 @@
 
       const days = window.AIRGUARD ? window.AIRGUARD.daysData : [];
       const last7 = days.slice(-7);
+      let environmentHistory = [];
       const ctx = document.getElementById("env7DayChart");
+      const fitEnvironmentAxes = (chart, records) => {
+        if (!chart || !records.length) return;
+        const aqi = records.map(item => Number(item.aqi)).filter(Number.isFinite);
+        chart.options.scales.y.min = 0;
+        chart.options.scales.y.max = Math.max(150, Math.ceil((Math.max(...aqi, 100) + 20) / 10) * 10);
+        chart.options.scales.y1.min = 0;
+        chart.options.scales.y1.max = 100;
+      };
       if (ctx) {
-        new Chart(ctx, {
+        const initialChart = new Chart(ctx, {
           type: "line",
           data: {
             labels: last7.map(d => d.dayLabel),
@@ -341,6 +362,7 @@
             }
           }
         });
+        fitEnvironmentAxes(initialChart, last7);
       }
 
       const location = window.AIRGUARD.getSavedLocation();
@@ -350,9 +372,9 @@
       const saveLocationBtn = document.getElementById('saveMapLocationBtn');
 
       const applyLocationLabel = (selected) => {
-        locationLabel.textContent = selected.label;
-        comparisonLabel.textContent = selected.label;
-        mapStatus.textContent = `Selected: ${selected.label}`;
+        if (locationLabel) locationLabel.textContent = selected.label;
+        if (comparisonLabel) comparisonLabel.textContent = selected.label;
+        if (mapStatus) mapStatus.textContent = `Selected: ${selected.label}`;
       };
       applyLocationLabel(location);
 
@@ -372,10 +394,10 @@
         applyLocationLabel(pendingLocation);
 
         const pickPoint = async (lat, lng) => {
-          mapStatus.textContent = 'Finding selected location…';
+          if (mapStatus) mapStatus.textContent = 'Finding selected location…';
           const label = await window.AIRGUARD.reverseGeocode(lat, lng);
           pendingLocation = { label, lat, lng };
-          mapStatus.textContent = `Selected: ${label}`;
+          if (mapStatus) mapStatus.textContent = `Selected: ${label}`;
         };
 
         environmentMap.on('click', (event) => {
@@ -399,20 +421,58 @@
             if (environmentMap) {
               environmentMap.setView([pendingLocation.lat, pendingLocation.lng], 11);
               environmentMarker.setLatLng([pendingLocation.lat, pendingLocation.lng]);
-              mapStatus.textContent = `Selected: ${pendingLocation.label}`;
+              if (mapStatus) mapStatus.textContent = `Selected: ${pendingLocation.label}`;
               environmentMap.invalidateSize();
             }
           }, 50);
         });
       });
 
-      saveLocationBtn.addEventListener('click', () => {
+      saveLocationBtn.addEventListener('click', async () => {
         const saved = window.AIRGUARD.saveLocation(pendingLocation);
+        const firebase = window.AIRGUARD_FIREBASE;
+        const user = firebase?.currentUser?.();
+        if (firebase && user) {
+          try { await firebase.saveProfile(user, { location: saved }); } catch (error) { console.error('Could not save location', error); }
+        }
         applyLocationLabel(saved);
         window.AIRGUARD.closeModal('locationModal');
         window.AIRGUARD.showToast(`Switched location to ${saved.label}`);
       });
     });
+
+    // Switch the environment history chart between real 7/30/90-day windows.
+    document.querySelectorAll('[data-env-range]').forEach(button => {
+      button.addEventListener('click', () => {
+        document.querySelectorAll('[data-env-range]').forEach(item => item.classList.remove('active'));
+        button.classList.add('active');
+        const range = Number(button.dataset.envRange);
+        const records = environmentHistory.slice(-range);
+        const chart = window.Chart?.getChart(document.getElementById('env7DayChart'));
+        if (!chart) return;
+        chart.data.labels = records.map(item => item.dateLabel || item.dayLabel);
+        chart.data.datasets[0].data = records.map(item => item.aqi);
+        chart.data.datasets[1].data = records.map(item => item.temp);
+        chart.data.datasets[2].data = records.map(item => item.humidity);
+        fitEnvironmentAxes(chart, records);
+        chart.update();
+      });
+    });
+    async function refreshEnvironmentHistory(range) {
+      try {
+        const location = window.AIRGUARD.getSavedLocation();
+        environmentHistory = await window.AIRGUARD.fetchEnvironmentHistory(location.lat, location.lng, range);
+        const chart = window.Chart?.getChart(document.getElementById('env7DayChart'));
+        if (!chart) return;
+        chart.data.labels = environmentHistory.slice(-range).map(item => item.dateLabel || item.dayLabel);
+        chart.data.datasets[0].data = environmentHistory.slice(-range).map(item => item.aqi);
+        chart.data.datasets[1].data = environmentHistory.slice(-range).map(item => item.temp);
+        chart.data.datasets[2].data = environmentHistory.slice(-range).map(item => item.humidity);
+        fitEnvironmentAxes(chart, environmentHistory.slice(-range));
+        chart.update();
+      } catch (error) { window.AIRGUARD.showToast('Environmental history is unavailable right now.'); }
+    }
+    refreshEnvironmentHistory(7);
   </script>
 </body>
 

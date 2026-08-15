@@ -199,6 +199,11 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase.js"></script>
 <script src="js/main.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -237,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const successBox = document.getElementById('calmCheckinSuccess');
 
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       const selectedSymptoms = Array.from(document.querySelectorAll('#calmSymptomsChips .chip.selected')).map(c => c.dataset.val);
       const selectedActivity = Array.from(document.querySelectorAll('#calmActivityChips .chip.selected')).map(c => c.dataset.val);
 
@@ -248,16 +253,25 @@ document.addEventListener('DOMContentLoaded', () => {
         symptoms: selectedSymptoms,
         activity: selectedActivity.join(', ') || 'Indoors',
         notes: document.getElementById('calmNoteInput').value,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        environment: null
       };
 
-      const current = JSON.parse(localStorage.getItem('airguard_custom_logs') || '[]');
-      current.push(record);
-      localStorage.setItem('airguard_custom_logs', JSON.stringify(current));
+      saveBtn.disabled = true;
+      try {
+        const location = window.AIRGUARD.getSavedLocation();
+        record.environment = await window.AIRGUARD.fetchCurrentConditions(location.lat, location.lng);
+        await window.AIRGUARD.saveCheckin(record);
+      } catch (error) {
+        saveBtn.disabled = false;
+        window.AIRGUARD.showToast(error.message || 'Could not save check-in');
+        return;
+      }
+      saveBtn.disabled = false;
 
       stepContents.forEach(c => c.style.display = 'none');
       if (successBox) successBox.style.display = 'flex';
-      window.AIRGUARD.showToast("Check-in saved to personal pattern history");
+      window.AIRGUARD.showToast("Check-in saved to your personal history");
     });
   }
 });
