@@ -11,7 +11,18 @@
     href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    #environmentMap { width: 100%; height: 340px; border-radius: 10px; }
+    .environment-map-wrap { position: relative; overflow: hidden; border-radius: 10px; }
+    .map-selection-status {
+      position:absolute; z-index:500; left:12px; right:12px; bottom:12px; padding:10px 12px;
+      background:rgba(255,255,255,.95); border:1px solid var(--border); border-radius:8px;
+      font-size:12px; font-weight:700; box-shadow:0 2px 10px rgba(0,0,0,.08); pointer-events:none;
+    }
+    .map-location-note { font-size:12px; color:var(--text-secondary); margin-top:7px; }
+  </style>
 </head>
 
 <body>
@@ -189,7 +200,7 @@
         <!-- COMPARED WITH YOUR USUAL CONDITIONS SECTION -->
         <h2 class="section-heading">Compared with your usual conditions</h2>
         <div class="card" style="margin-bottom: 24px;">
-          <p class="secondary-text" style="margin-bottom: 16px;">How today's environment in Jaipur compares to your
+          <p class="secondary-text" style="margin-bottom: 16px;">How today's environment in <span id="comparisonLocationLabel">Jaipur, India</span> compares to your
             30-day baseline:</p>
 
           <div class="cmp-row">
@@ -247,44 +258,27 @@
 
   <!-- CHANGE LOCATION MODAL -->
   <div class="modal-overlay" id="locationModal">
-    <div class="modal-box">
+    <div class="modal-box" style="max-width:760px; width:calc(100vw - 32px);">
       <div class="modal-top">
         <h3 class="card-heading">Select Location</h3>
         <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
       </div>
-      <p class="body-text" style="color:var(--text-secondary); margin-bottom:16px;">Choose a city to test how AIRGUARD
-        recalibrates baseline models and real-time alerts:</p>
-
-      <div style="display:flex; flex-direction:column; gap:8px;">
-        <button class="btn btn-outline" style="justify-content:space-between; text-align:left;"
-          data-city="Jaipur, India">
-          <span>Jaipur, India</span>
-          <span class="secondary-text" style="font-size:12px;">34°C · AQI 128 (Current)</span>
-        </button>
-        <button class="btn btn-outline" style="justify-content:space-between; text-align:left;"
-          data-city="New Delhi, India">
-          <span>New Delhi, India</span>
-          <span class="secondary-text" style="font-size:12px;">36°C · AQI 168</span>
-        </button>
-        <button class="btn btn-outline" style="justify-content:space-between; text-align:left;" data-city="London, UK">
-          <span>London, UK</span>
-          <span class="secondary-text" style="font-size:12px;">22°C · AQI 42</span>
-        </button>
-        <button class="btn btn-outline" style="justify-content:space-between; text-align:left;"
-          data-city="New York, USA">
-          <span>New York, USA</span>
-          <span class="secondary-text" style="font-size:12px;">29°C · AQI 74</span>
-        </button>
-        <button class="btn btn-outline" style="justify-content:space-between; text-align:left;"
-          data-city="Tokyo, Japan">
-          <span>Tokyo, Japan</span>
-          <span class="secondary-text" style="font-size:12px;">31°C · AQI 52</span>
-        </button>
+      <p class="body-text" style="color:var(--text-secondary); margin-bottom:16px;">Click anywhere on the map to choose your
+        location. AIRGUARD will use the selected coordinates for environmental context.</p>
+      <div class="environment-map-wrap">
+        <div id="environmentMap" aria-label="Interactive location map"></div>
+        <div class="map-selection-status" id="environmentMapStatus">Selected: Jaipur, India</div>
+      </div>
+      <div class="map-location-note">Drag the pin or click another point on the map to update it.</div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+        <button class="btn btn-outline btn-sm" data-close-modal>Cancel</button>
+        <button class="btn btn-dark btn-sm" id="saveMapLocationBtn">Use this location</button>
       </div>
     </div>
   </div>
 
   <script src="js/main.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       // Chart.js default setup
@@ -350,14 +344,74 @@
         });
       }
 
-      // Location selector click handler
-      document.querySelectorAll('[data-city]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const city = btn.dataset.city;
-          document.getElementById('currentLocationLabel').textContent = city;
-          window.AIRGUARD.closeModal('locationModal');
-          window.AIRGUARD.showToast(`Switched location to ${city}`);
+      const location = window.AIRGUARD.getSavedLocation();
+      const locationLabel = document.getElementById('currentLocationLabel');
+      const comparisonLabel = document.getElementById('comparisonLocationLabel');
+      const mapStatus = document.getElementById('environmentMapStatus');
+      const saveLocationBtn = document.getElementById('saveMapLocationBtn');
+
+      const applyLocationLabel = (selected) => {
+        locationLabel.textContent = selected.label;
+        comparisonLabel.textContent = selected.label;
+        mapStatus.textContent = `Selected: ${selected.label}`;
+      };
+      applyLocationLabel(location);
+
+      let environmentMap;
+      let environmentMarker;
+      let pendingLocation = { ...location };
+
+      const initEnvironmentMap = () => {
+        if (!window.L || environmentMap) return;
+        environmentMap = L.map('environmentMap').setView([pendingLocation.lat, pendingLocation.lng], 11);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(environmentMap);
+
+        environmentMarker = L.marker([pendingLocation.lat, pendingLocation.lng], { draggable: true }).addTo(environmentMap);
+        applyLocationLabel(pendingLocation);
+
+        const pickPoint = async (lat, lng) => {
+          mapStatus.textContent = 'Finding selected location…';
+          const label = await window.AIRGUARD.reverseGeocode(lat, lng);
+          pendingLocation = { label, lat, lng };
+          mapStatus.textContent = `Selected: ${label}`;
+        };
+
+        environmentMap.on('click', (event) => {
+          environmentMarker.setLatLng(event.latlng);
+          pickPoint(event.latlng.lat, event.latlng.lng);
         });
+        environmentMarker.on('dragend', (event) => {
+          const point = event.target.getLatLng();
+          pickPoint(point.lat, point.lng);
+        });
+
+        setTimeout(() => environmentMap.invalidateSize(), 100);
+      };
+
+      document.querySelectorAll('[data-open-modal="locationModal"]').forEach(trigger => {
+        trigger.addEventListener('click', () => {
+          pendingLocation = { ...window.AIRGUARD.getSavedLocation() };
+          window.AIRGUARD.openModal('locationModal');
+          setTimeout(() => {
+            initEnvironmentMap();
+            if (environmentMap) {
+              environmentMap.setView([pendingLocation.lat, pendingLocation.lng], 11);
+              environmentMarker.setLatLng([pendingLocation.lat, pendingLocation.lng]);
+              mapStatus.textContent = `Selected: ${pendingLocation.label}`;
+              environmentMap.invalidateSize();
+            }
+          }, 50);
+        });
+      });
+
+      saveLocationBtn.addEventListener('click', () => {
+        const saved = window.AIRGUARD.saveLocation(pendingLocation);
+        applyLocationLabel(saved);
+        window.AIRGUARD.closeModal('locationModal');
+        window.AIRGUARD.showToast(`Switched location to ${saved.label}`);
       });
     });
   </script>

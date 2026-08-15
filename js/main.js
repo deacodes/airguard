@@ -19,6 +19,12 @@
     movement: 51
   };
 
+  const DEFAULT_LOCATION = {
+    label: "Jaipur, India",
+    lat: 26.9124,
+    lng: 75.7873
+  };
+
   const CITIES = {
     "Jaipur, India": { temp: 34, humidity: 72, aqi: 128, pm25: 34, pm10: 68, uv: "High", pollen: "Moderate", wind: "14 km/h", pressure: "1012 hPa" },
     "New Delhi, India": { temp: 36, humidity: 65, aqi: 168, pm25: 58, pm10: 110, uv: "Very High", pollen: "Moderate", wind: "9 km/h", pressure: "1009 hPa" },
@@ -219,6 +225,59 @@
     }
   };
 
+  // Shared location state for onboarding + environment map selectors.
+  const LOCATION_STORAGE_KEY = "airguard_location";
+
+  function getSavedLocation() {
+    try {
+      const raw = localStorage.getItem(LOCATION_STORAGE_KEY);
+      if (!raw) return { ...DEFAULT_LOCATION };
+      const parsed = JSON.parse(raw);
+      if (typeof parsed.lat !== "number" || typeof parsed.lng !== "number" || !parsed.label) {
+        return { ...DEFAULT_LOCATION };
+      }
+      return parsed;
+    } catch (error) {
+      return { ...DEFAULT_LOCATION };
+    }
+  }
+
+  function saveLocation(location) {
+    const next = {
+      label: location.label || DEFAULT_LOCATION.label,
+      lat: Number(location.lat),
+      lng: Number(location.lng)
+    };
+    if (!Number.isFinite(next.lat) || !Number.isFinite(next.lng)) return getSavedLocation();
+    localStorage.setItem(LOCATION_STORAGE_KEY, JSON.stringify(next));
+    return next;
+  }
+
+  async function reverseGeocode(lat, lng) {
+    const fallback = `Pinned location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+    try {
+      const url = new URL("https://nominatim.openstreetmap.org/reverse");
+      url.searchParams.set("format", "jsonv2");
+      url.searchParams.set("lat", lat);
+      url.searchParams.set("lon", lng);
+      url.searchParams.set("zoom", "10");
+      url.searchParams.set("addressdetails", "1");
+
+      const response = await fetch(url.toString(), {
+        headers: { "Accept": "application/json" }
+      });
+      if (!response.ok) throw new Error(`Reverse geocoding failed: ${response.status}`);
+
+      const data = await response.json();
+      const address = data.address || {};
+      const locality = address.city || address.town || address.village || address.municipality || address.county;
+      const country = address.country;
+      return locality && country ? `${locality}, ${country}` : (data.display_name || fallback);
+    } catch (error) {
+      return fallback;
+    }
+  }
+
   // Expose Globally
   window.AIRGUARD = {
     BASELINE,
@@ -231,7 +290,11 @@
     openModal,
     closeModal,
     openDrawer,
-    closeDrawer
+    closeDrawer,
+    DEFAULT_LOCATION,
+    getSavedLocation,
+    saveLocation,
+    reverseGeocode
   };
 
   // =====================================================
