@@ -213,7 +213,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const reply = await askAirguardAI(text, {
         patterns: window.AIRGUARD?.PATTERNS || {},
         baseline: window.AIRGUARD?.BASELINE || {},
-        currentConditions
+        currentConditions,
+        activityContext: window.AIRGUARD?.activityContext || {}
       });
       return reply;
     } catch (err) {

@@ -1543,6 +1543,16 @@ input[type="range"]::-moz-range-thumb {
   display: block;
 }
 
+.slot-date {
+  display: block;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-top: 1px;
+}
+
 .time-slot-card span {
   font-size: 11px;
   color: var(--text-secondary);
