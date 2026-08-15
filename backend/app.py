@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from environmentalapi import get_current_conditions
+from environmentalapi import get_current_conditions, get_history
 
 app = Flask(__name__)
 CORS(app)
@@ -27,6 +27,20 @@ def environment_current():
             "error": "Failed to retrieve environmental data",
             "details": str(e)
         }), 500
+
+
+@app.get("/environment/history")
+def environment_history():
+    try:
+        lat = float(request.args.get("lat"))
+        lon = float(request.args.get("lon"))
+        days = min(max(int(request.args.get("days", 7)), 1), 90)
+    except (TypeError, ValueError):
+        return jsonify({"error": "lat, lon, and a valid days value are required"}), 400
+    try:
+        return jsonify({"days": get_history(lat, lon, days)})
+    except Exception as error:
+        return jsonify({"error": "Failed to retrieve environmental history", "details": str(error)}), 500
 
 
 if __name__ == "__main__":
