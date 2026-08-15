@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AIRGUARD — Your Timeline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    /* TIMELINE LAYOUT */
+    .tl-grid {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 20px;
+      align-items: flex-start;
+    }
+    @media (max-width: 900px) {
+      .tl-grid { grid-template-columns: 1fr; }
+    }
+
+    /* CHART CARD */
+    .chart-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .chart-legend-inline {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+    .legend-swatch {
+      width: 20px;
+      height: 3px;
+      border-radius: 2px;
+    }
+    .legend-swatch.dashed { background: repeating-linear-gradient(to right, #2F6FEB 0, #2F6FEB 4px, transparent 4px, transparent 8px); }
+
+    /* DATE PILLS */
+    .date-pills-row {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-soft);
+    }
+    .date-pills-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-tertiary);
+      margin-bottom: 8px;
+    }
+    .pills-wrap { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* SIDE PANEL */
+    .side-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      position: sticky;
+      top: 20px;
+    }
+    .side-panel-date {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-tertiary);
+      margin-bottom: 4px;
+    }
+    .side-panel-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 20px;
+    }
+    .sp-block {
+      margin-bottom: 18px;
+    }
+    .sp-block:last-child { margin-bottom: 0; }
+    .sp-block-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-tertiary);
+      margin-bottom: 6px;
+    }
+    .sp-block-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .sp-divider {
+      border: none;
+      border-top: 1px solid var(--border-soft);
+      margin: 16px 0;
+    }
+
+    /* Score pills */
+    .score-row { display: flex; gap: 10px; }
+    .score-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      flex: 1;
+    }
+    .score-pill-num {
+      font-size: 20px;
+      font-weight: 800;
+      line-height: 1.1;
+    }
+    .score-pill-lbl {
+      font-size: 11px;
+      color: var(--text-tertiary);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    /* Note callout */
+    .sp-note-box {
+      background: var(--surface-alt);
+      border-radius: 8px;
+      padding: 10px 13px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-style: italic;
+      line-height: 1.55;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="brand-dot"></span> AIRGUARD
+    </div>
+    <nav class="sidebar-nav">
+      <a href="index.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.4"/><rect x="14" y="3" width="7" height="7" rx="1.4"/><rect x="3" y="14" width="7" height="7" rx="1.4"/><rect x="14" y="14" width="7" height="7" rx="1.4"/></svg>
+        Overview
+      </a>
+      <a href="checkin.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.4 2.4L16 9.5"/></svg>
+        Check-in
+      </a>
+      <a href="patterns.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 6h6v6"/></svg>
+        Patterns
+      </a>
+      <a href="timeline.html" class="nav-link active">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+        Timeline
+      </a>
+      <a href="environment.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a13 13 0 0 1 0 18 13 13 0 0 1 0-18Z"/></svg>
+        Environment
+      </a>
+      <a href="activity.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 8-6-16-3 8H2"/></svg>
+        Activity
+      </a>
+      <a href="weekly-insights.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        Weekly Insights
+      </a>
+      <a href="ai.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
+        AIRGUARD AI
+      </a>
+    </nav>
+    <div class="sidebar-bottom">
+      <a href="settings.html" class="nav-link">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 13.5a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V20a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1.1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H4a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.6-1.1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H10a1.7 1.7 0 0 0 1-1.6V4a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V10a1.7 1.7 0 0 0 1.6 1H20a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.6 1Z"/></svg>
+        Settings
+      </a>
+      <div class="sidebar-footer-note">Local-first · IndexedDB<br>AES-GCM encrypted</div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main-content-wrap">
+    <div class="topbar-mobile">
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <div class="sidebar-brand" style="padding:0; color:var(--text);"><span class="brand-dot"></span> AIRGUARD</div>
+    </div>
+
+    <main class="main-viewport fade-in">
+
+      <!-- HEADER ROW -->
+      <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+        <div>
+          <h1 class="page-title">Your Timeline</h1>
+          <p class="page-subtitle">See how your environment and wellbeing have moved together over time. Click any point on the chart to inspect that day.</p>
+        </div>
+        <div class="timeline-controls" style="margin-bottom:0;">
+          <button class="toggle-btn" data-range="7">7 days</button>
+          <button class="toggle-btn active" data-range="30">30 days</button>
+          <button class="toggle-btn" data-range="90">90 days</button>
+        </div>
+      </div>
+
+      <!-- WHAT AM I LOOKING AT? callout -->
+      <div style="background:var(--blue-bg); border:1px solid #BED7FA; border-radius:var(--radius-md); padding:14px 18px; margin-bottom:22px; display:flex; align-items:flex-start; gap:12px;">
+        <svg width="16" height="16" style="flex-shrink:0; margin-top:2px;" viewBox="0 0 24 24" fill="none" stroke="#2F6FEB" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+        <div style="font-size:13px; color:var(--text-secondary); line-height:1.6;">
+          <strong style="color:var(--text);">How to read this chart:</strong> The coloured lines show your personal wellness scores (Energy &amp; Comfort, scale 1–10). The dashed blue line shows the Air Quality Index (AQI, right axis). Where the AQI rises and wellness lines dip together, a pattern may be forming.
+        </div>
+      </div>
+
+      <!-- CHART + PANEL GRID -->
+      <div class="tl-grid">
+
+        <!-- CHART CARD -->
+        <div class="card">
+          <div class="chart-title-row">
+            <div>
+              <h3 style="font-size:15px; font-weight:700; margin-bottom:4px;">Environment vs Wellness</h3>
+              <p class="secondary-text" style="font-size:12px;">Click a data point to see full details for that day</p>
+            </div>
+            <div class="chart-legend-inline">
+              <div class="legend-item">
+                <div class="legend-swatch" style="background:var(--purple);"></div>
+                Energy
+              </div>
+              <div class="legend-item">
+                <div class="legend-swatch" style="background:var(--green);"></div>
+                Comfort
+              </div>
+              <div class="legend-item">
+                <div class="legend-swatch dashed"></div>
+                AQI
+              </div>
+            </div>
+          </div>
+          <canvas id="timelineMasterChart" height="130"></canvas>
+
+          <!-- DATE PILLS -->
+          <div class="date-pills-row">
+            <div class="date-pills-label">Jump to date</div>
+            <div class="pills-wrap" id="timelineDatePills"></div>
+          </div>
+        </div>
+
+        <!-- SIDE PANEL -->
+        <div class="side-panel">
+          <div class="side-panel-date">Selected day</div>
+          <div class="side-panel-title" id="selectedDateTitle">August 12</div>
+
+          <!-- WELLNESS SCORES -->
+          <div class="sp-block">
+            <div class="sp-block-label">Wellness Scores</div>
+            <div class="score-row">
+              <div class="score-pill" style="border-color:#D0C4FA;">
+                <div class="score-pill-num" style="color:var(--purple-fg);" id="panelEnergyNum">4.0</div>
+                <div class="score-pill-lbl">Energy</div>
+              </div>
+              <div class="score-pill" style="border-color:#BDE6D5;">
+                <div class="score-pill-num" style="color:var(--green-fg);" id="panelComfortNum">5.0</div>
+                <div class="score-pill-lbl">Comfort</div>
+              </div>
+            </div>
+          </div>
+
+          <hr class="sp-divider">
+
+          <!-- ENVIRONMENT -->
+          <div class="sp-block">
+            <div class="sp-block-label">Environment</div>
+            <div class="sp-block-value" id="panelEnvText">
+              AQI 141 · 35°C · 69% humidity
+            </div>
+          </div>
+
+          <!-- SYMPTOMS -->
+          <div class="sp-block">
+            <div class="sp-block-label">Symptoms logged</div>
+            <div class="tag-row" id="panelSymptomsRow">
+              <span class="tag">Headache</span>
+              <span class="tag">Congestion</span>
+            </div>
+          </div>
+
+          <!-- ACTIVITY -->
+          <div class="sp-block">
+            <div class="sp-block-label">Activity type</div>
+            <div class="sp-block-value" id="panelActivityText">Outside</div>
+          </div>
+
+          <hr class="sp-divider">
+
+          <!-- NOTE -->
+          <div class="sp-block">
+            <div class="sp-block-label">Your note</div>
+            <div class="sp-note-box" id="panelNotesText">"Walked home from school."</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script src="js/main.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  Chart.defaults.font.family = "'DM Sans', sans-serif";
+  Chart.defaults.color = "#8A939A";
+
+  const days = window.AIRGUARD ? window.AIRGUARD.daysData : [];
+  let timelineChart = null;
+
+  function renderTimelineChart(range) {
+    const data = days.slice(-range);
+    const ctx = document.getElementById("timelineMasterChart");
+    if (!ctx) return;
+    if (timelineChart) timelineChart.destroy();
+
+    timelineChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: data.map(d => d.dateLabel),
+        datasets: [
+          {
+            label: "Energy",
+            data: data.map(d => d.energy),
+            borderColor: "#7C5CFC",
+            borderWidth: 2.2,
+            tension: 0.35,
+            pointRadius: range > 14 ? 2.5 : 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: "#7C5CFC",
+            yAxisID: "y"
+          },
+          {
+            label: "Comfort",
+            data: data.map(d => d.comfort),
+            borderColor: "#17A673",
+            borderWidth: 2.2,
+            tension: 0.35,
+            pointRadius: range > 14 ? 2.5 : 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: "#17A673",
+            yAxisID: "y"
+          },
+          {
+            label: "AQI",
+            data: data.map(d => d.aqi),
+            borderColor: "#2F6FEB",
+            borderWidth: 1.8,
+            borderDash: [4, 4],
+            tension: 0.35,
+            pointRadius: range > 14 ? 0 : 3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: "#2F6FEB",
+            yAxisID: "y1"
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        onClick: (evt, elements) => {
+          if (elements.length) showDayDetail(data[elements[0].index]);
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            mode: "index",
+            intersect: false,
+            callbacks: {
+              afterBody: (items) => {
+                const d = data[items[0].dataIndex];
+                return [`Temp: ${d.temp}°C`, `Humidity: ${d.humidity}%`, `Symptoms: ${d.symptoms.join(', ') || 'None'}`];
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } },
+          y: {
+            position: "left", min: 1, max: 10,
+            title: { display: true, text: "Wellness (1–10)", font: { size: 11 } },
+            grid: { color: "#F0F5F4" }
+          },
+          y1: {
+            position: "right", min: 30, max: 190,
+            title: { display: true, text: "AQI", font: { size: 11 } },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+
+    renderDatePills(data);
+  }
+
+  function renderDatePills(data) {
+    const container = document.getElementById("timelineDatePills");
+    if (!container) return;
+    const subset = data.slice(-10);
+    container.innerHTML = subset.map(d =>
+      `<button type="button" class="btn btn-outline btn-sm" data-day-id="${d.id}" style="padding:4px 9px; font-size:11.5px;">${d.dateLabel}</button>`
+    ).join('');
+    container.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = days.find(x => x.id === btn.dataset.dayId);
+        if (item) showDayDetail(item);
+      });
+    });
+  }
+
+  function showDayDetail(d) {
+    const label = d.fullDateStr || d.dateLabel;
+    const month = label.split(' ')[0] || '';
+    const num = label.split(' ')[1] || '';
+    document.getElementById("selectedDateTitle").textContent = `${month} ${num}`;
+    document.getElementById("panelEnergyNum").textContent = d.energy.toFixed(1);
+    document.getElementById("panelComfortNum").textContent = d.comfort.toFixed(1);
+    document.getElementById("panelEnvText").textContent = `AQI ${d.aqi} · ${d.temp}°C · ${d.humidity}% humidity`;
+    const tagRow = document.getElementById("panelSymptomsRow");
+    tagRow.innerHTML = d.symptoms.length
+      ? d.symptoms.map(s => `<span class="tag">${s}</span>`).join('')
+      : '<span class="secondary-text" style="font-size:13px;">None reported</span>';
+    document.getElementById("panelActivityText").textContent = d.activity || "Indoors";
+    document.getElementById("panelNotesText").textContent = d.notes ? `"${d.notes}"` : 'No note logged.';
+    if (window.AIRGUARD) window.AIRGUARD.showToast(`Inspecting ${d.dateLabel}`);
+  }
+
+  document.querySelectorAll('.timeline-controls .toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.timeline-controls .toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTimelineChart(parseInt(btn.dataset.range));
+    });
+  });
+
+  renderTimelineChart(30);
+  const aug12 = days.find(d => d.dateLabel === 'Aug 12') || days[days.length - 4];
+  if (aug12) showDayDetail(aug12);
+});
+</script>
+</body>
+</html>
