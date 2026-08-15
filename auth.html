@@ -3,81 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AIRGUARD — Sign In / Sign Up</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+  <meta http-equiv="refresh" content="0; url=onboarding.html">
+  <title>AIRGUARD — Account</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body style="background:var(--app-bg);">
-
-<div class="auth-page-container">
-  <div class="auth-card fade-in">
-    
-    <div style="text-align:center; margin-bottom:20px;">
-      <div class="landing-brand" style="justify-content:center; margin-bottom:6px;">
-        <span class="brand-dot"></span> AIRGUARD
-      </div>
-      <p class="secondary-text">Encrypted Personal Wellness Vault</p>
+  <div class="auth-page-container">
+    <div class="auth-card fade-in" style="text-align:center;">
+      <div class="landing-brand" style="justify-content:center; margin-bottom:12px;"><span class="brand-dot"></span> AIRGUARD</div>
+      <p class="secondary-text">Opening the account and onboarding experience…</p>
+      <a class="btn btn-dark btn-full" href="onboarding.html">Continue</a>
     </div>
-
-    <!-- TAB SWITCHER -->
-    <div class="auth-tab-row">
-      <button type="button" class="auth-tab-btn active" id="tabSignIn">Sign In</button>
-      <button type="button" class="auth-tab-btn" id="tabSignUp">Create Account</button>
-    </div>
-
-    <!-- FORM -->
-    <form id="authForm" onsubmit="event.preventDefault(); window.location.href='dashboard.html';">
-      <div class="field" style="margin-bottom:14px;">
-        <label for="authEmail">Email or Username</label>
-        <input type="text" id="authEmail" value="dea@airguard.local" required>
-      </div>
-
-      <div class="field" style="margin-bottom:18px;">
-        <label for="authPassword">Vault Key / Password</label>
-        <input type="password" id="authPassword" value="••••••••••••" required>
-      </div>
-
-      <button type="submit" class="btn btn-dark btn-full" style="padding:12px; font-size:14.5px;">
-        Open Encrypted Vault →
-      </button>
-    </form>
-
-    <div style="text-align:center; margin:20px 0 16px; border-top:1px solid var(--border-soft); padding-top:16px;">
-      <span class="secondary-text" style="font-size:12px;">OR</span>
-    </div>
-
-    <!-- LOCAL GUEST OPTION -->
-    <a href="dashboard.html" class="btn btn-outline btn-full" style="font-size:13px;">
-      Continue in Local Mode (No Account Required)
-    </a>
-
-    <div class="disclaimer-box" style="margin-top:20px; text-align:center; font-size:11.5px; display:flex; align-items:center; justify-content:center; gap:6px;">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      <b>WebCrypto AES-GCM Encrypted:</b> Account credentials and health logs are stored locally on your device in this prototype.
-    </div>
-
   </div>
-</div>
-
-<script src="js/main.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const tabIn = document.getElementById('tabSignIn');
-  const tabUp = document.getElementById('tabSignUp');
-
-  if (tabIn && tabUp) {
-    tabIn.addEventListener('click', () => {
-      tabIn.classList.add('active');
-      tabUp.classList.remove('active');
-    });
-    tabUp.addEventListener('click', () => {
-      tabUp.classList.add('active');
-      tabIn.classList.remove('active');
-    });
-  }
-});
-</script>
+  <script>window.location.replace('onboarding.html');</script>
 </body>
 </html>
