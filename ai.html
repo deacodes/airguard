@@ -99,7 +99,7 @@
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
               </div>
               <div class="ai-bubble">
-                <b>AIRGUARD AI</b>
+                <b class="ai-sender-name">AIRGUARD AI</b>
                 <p>Hello — I’m AIRGUARD AI. Add personal check-ins and environmental context, and I’ll be ready to help you explore them.</p>
               </div>
             </div>
@@ -129,7 +129,7 @@
             <div style="display:flex; flex-direction:column; gap:10px;">
               <div style="padding:10px 12px; background:var(--app-bg); border-radius:8px; font-size:12.5px;">
                 <b style="display:block; font-size:11px; text-transform:uppercase; color:var(--text-tertiary);">Environmental Feed</b>
-                <span>AQI 128 · 34°C · 72% humidity · UV High</span>
+                <span id="aiEnvFeedText">Loading current conditions…</span>
               </div>
 
               <div style="padding:10px 12px; background:var(--app-bg); border-radius:8px; font-size:12.5px;">
@@ -148,6 +148,10 @@
             </div>
           </div>
 
+          <div class="card" id="aiStatusCard" style="display:none;">
+            <p class="secondary-text" style="font-size:12px;" id="aiStatusText"></p>
+          </div>
+
         </div>
 
       </div>
@@ -162,27 +166,61 @@
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
 <script src="js/firebase.js"></script>
 <script src="js/main.js"></script>
-<script>
+<script type="module">
+import { askAirguardAI } from './js/ai_explainer.js';
+
 document.addEventListener('DOMContentLoaded', () => {
   const chatBox = document.getElementById('aiChatBox');
   const input = document.getElementById('aiInput');
   const sendBtn = document.getElementById('aiSendBtn');
+  const statusCard = document.getElementById('aiStatusCard');
+  const statusText = document.getElementById('aiStatusText');
+  const envFeedEl = document.getElementById('aiEnvFeedText');
 
-  function getAIReply(text) {
-    const q = text.toLowerCase();
-    if (q.includes('flag') || q.includes('why')) {
-      return "Today was flagged because your ambient humidity is <b>72% (+28% vs your 56% baseline)</b> and AQI is <b>128 (+39% vs baseline)</b>. Across your 30-day history, on 8 of 11 matching days you reported physical energy below 5.5/10.";
+  function showStatus(msg) {
+    if (!statusCard || !statusText) return;
+    statusText.textContent = msg;
+    statusCard.style.display = 'block';
+  }
+
+  // --- Fetch real current conditions once on load, both for the visible
+  // "What the AI can inspect" panel and for grounding the chat itself ---
+  let currentConditions = {};
+  let conditionsReady = (async () => {
+    const location = window.AIRGUARD?.getSavedLocation?.();
+    try {
+      if (location) {
+        currentConditions = await window.AIRGUARD.fetchCurrentConditions(location.lat, location.lng);
+      }
+      if (envFeedEl) {
+        const aqi = currentConditions.aqi ?? '—';
+        const temp = currentConditions.temperature_c != null ? `${Math.round(currentConditions.temperature_c)}°C` : '—';
+        const humidity = currentConditions.humidity_pct != null ? `${Math.round(currentConditions.humidity_pct)}%` : '—';
+        const uv = currentConditions.uv_index != null ? currentConditions.uv_index : '—';
+        envFeedEl.textContent = `AQI ${aqi} · ${temp} · ${humidity} humidity · UV ${uv}`;
+      }
+    } catch (err) {
+      console.warn('Could not fetch current conditions:', err);
+      if (envFeedEl) envFeedEl.textContent = 'Live conditions unavailable right now';
     }
-    if (q.includes('comfort') || q.includes('affect') || q.includes('most')) {
-      return "Your strongest observed correlation is <b>High Humidity (>65%) + Temperature (>33°C)</b>. This combo accounts for 73% of your lower-comfort check-ins. High AQI alone primarily triggers nasal congestion rather than bodily fatigue.";
+  })();
+
+  // --- Real AI call: hits the Flask backend, which calls Grok server-side ---
+  async function getAIReply(text) {
+    await conditionsReady; // reuse the same fetch instead of hitting the API again per message
+
+    try {
+      const reply = await askAirguardAI(text, {
+        patterns: window.AIRGUARD?.PATTERNS || {},
+        baseline: window.AIRGUARD?.BASELINE || {},
+        currentConditions
+      });
+      return reply;
+    } catch (err) {
+      console.error('AIRGUARD AI error:', err);
+      showStatus('Could not reach the AI backend — is the Flask server running on :5001?');
+      return "Sorry, I couldn't reach AIRGUARD AI just now. Make sure the backend server is running, then try again.";
     }
-    if (q.includes('yesterday') || q.includes('compare')) {
-      return "Yesterday in Jaipur was <b>31.9°C with 68% humidity</b>, and you reported 6.7 comfort. Today temperature increased by <b>+2.1°C</b> and AQI jumped by <b>+12 points</b>. Your sleep last night (6h 14m) was also 48 minutes shorter than yesterday.";
-    }
-    if (q.includes('run') || q.includes('workout') || q.includes('time') || q.includes('schedule')) {
-      return "The optimal window for outdoor activity today is <b>6:30 PM</b>. Temperature will cool from 35°C down to <b>28°C</b>, and AQI will improve to <b>94</b>, matching the conditions from your most comfortable outdoor sessions.";
-    }
-    return "Based on your 30-day baseline in Jaipur, environmental load is currently higher than normal. Protecting a 60-minute recovery window in the cooler evening (after 6:30 PM) is the most effective micro-adjustment for today.";
   }
 
   function appendMessage(sender, htmlText) {
@@ -196,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
       </div>
       <div class="ai-bubble">
-        <b>AIRGUARD AI</b>
+        <b class="ai-sender-name">AIRGUARD AI</b>
         <p>${htmlText}</p>
       </div>
     `;
@@ -204,16 +242,16 @@ document.addEventListener('DOMContentLoaded', () => {
     chatBox.scrollTop = chatBox.scrollHeight;
   }
 
-  function handleSend() {
+  async function handleSend() {
     const val = input.value.trim();
     if (!val) return;
     appendMessage('user', val);
     input.value = '';
+    sendBtn.disabled = true;
 
-    setTimeout(() => {
-      const reply = getAIReply(val);
-      appendMessage('bot', reply);
-    }, 400);
+    const reply = await getAIReply(val);
+    appendMessage('bot', reply);
+    sendBtn.disabled = false;
   }
 
   sendBtn.addEventListener('click', handleSend);

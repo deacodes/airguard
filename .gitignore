@@ -2,3 +2,6 @@ __pycache__/
 *.pyc
 # macOS system files
 .DS_Store
+
+# environment variables / secrets
+.env

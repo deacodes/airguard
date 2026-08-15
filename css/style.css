@@ -157,7 +157,7 @@ a {
 }
 
 /* =====================================================
-   LANDING PAGE (UNIQUE, NON-GENERIC HOMEPAGE)
+   LANDING PAGE 
    ===================================================== */
 .landing-body {
   background: #edf4f2;
@@ -1685,7 +1685,7 @@ input[type="range"]::-moz-range-thumb {
   color: var(--text);
 }
 
-.ai-bubble b {
+.ai-bubble b.ai-sender-name {
   font-size: 12.5px;
   display: block;
   margin-bottom: 4px;

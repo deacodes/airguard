@@ -1,7 +1,11 @@
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+load_dotenv()  # reads .env in the project root, if present
+
 from environmentalapi import get_current_conditions, get_history
+from ai_explainer import generate_ai_chat_reply
 
 app = Flask(__name__)
 CORS(app)
@@ -41,6 +45,43 @@ def environment_history():
         return jsonify({"days": get_history(lat, lon, days)})
     except Exception as error:
         return jsonify({"error": "Failed to retrieve environmental history", "details": str(error)}), 500
+
+
+@app.post("/ai/chat")
+def ai_chat():
+    """
+    Takes a user's question plus already-aggregated pattern/environment
+    data (never raw check-in logs or notes) and returns an AI-generated,
+    non-diagnostic explanation.
+
+    Expected JSON body:
+      {
+        "question": "why was today flagged?",
+        "current_conditions": { ...CurrentConditions fields... },
+        "baseline": { "temp": 28, "humidity": 56, "aqi": 92, ... },
+        "patterns": [ ...Pattern.to_dict() results... ]
+      }
+    """
+    body = request.get_json(silent=True) or {}
+
+    question = (body.get("question") or "").strip()
+    if not question:
+        return jsonify({"error": "question is required"}), 400
+
+    current_conditions = body.get("current_conditions") or {}
+    baseline = body.get("baseline") or {}
+    patterns = body.get("patterns") or []
+
+    if not isinstance(patterns, list):
+        return jsonify({"error": "patterns must be a list"}), 400
+
+    result = generate_ai_chat_reply(
+        question,
+        current_conditions=current_conditions,
+        baseline=baseline,
+        patterns=patterns,
+    )
+    return jsonify(result)
 
 
 if __name__ == "__main__":
