@@ -265,7 +265,12 @@
     </div>
   </div>
 
-  <script src="js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase.js"></script>
+<script src="js/main.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       // Theme switch logic
@@ -294,11 +299,24 @@
       });
 
       // Delete History
+      const signOutBtn = document.getElementById('signOutBtn');
+      if (signOutBtn) {
+        signOutBtn.addEventListener('click', async (event) => {
+          event.preventDefault();
+          const finish = () => { localStorage.removeItem('airguard_user_data'); localStorage.removeItem('airguard_demo'); window.location.href = 'index.html'; };
+          try {
+            if (window.AIRGUARD_FIREBASE) await window.AIRGUARD_FIREBASE.signOut();
+          } finally { finish(); }
+        });
+      }
+
       const deleteHistoryBtn = document.getElementById('deleteHistoryBtn');
       if (deleteHistoryBtn) {
         deleteHistoryBtn.addEventListener('click', () => {
           if (confirm("Clear all recorded check-ins?")) {
             localStorage.removeItem('airguard_custom_logs');
+            const cached = window.AIRGUARD_FIREBASE?.getCachedData?.();
+            if (cached) { cached.checkins = []; localStorage.setItem('airguard_user_data', JSON.stringify(cached)); }
             window.AIRGUARD.showToast("Wellness check-in history cleared");
           }
         });
