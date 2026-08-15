@@ -254,15 +254,8 @@
       padding: 0 32px;
     }
 
-    /* Two-col layout for hero */
-    .hero-two-col {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 48px;
-      align-items: center;
-    }
     @media (max-width: 820px) {
-      .hero-two-col { grid-template-columns: 1fr; }
+      .landing-hero { grid-template-columns: 1fr; }
       .hero-spotlight-card { max-width: 100%; }
     }
     @media (max-width: 600px) {
@@ -293,7 +286,6 @@
 
     <!-- ── HERO ───────────────────────────────────────────── -->
     <section class="landing-hero">
-      <div class="hero-two-col">
         <div>
           <span class="landing-hero-tag">ENVIRONMENTAL WELLNESS INTELLIGENCE</span>
           <h1 class="landing-hero-h1">Understand what your environment means for <span style="color:var(--purple-fg);">you.</span></h1>
@@ -340,7 +332,6 @@
             <a href="dashboard.html" style="color:var(--purple-fg); font-weight:700;">See Evidence →</a>
           </div>
         </div>
-      </div>
     </section>
 
     <!-- ── STATS ──────────────────────────────────────────── -->
