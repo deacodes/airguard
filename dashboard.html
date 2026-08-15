@@ -79,7 +79,7 @@
         <div>
           <h1 class="page-title">Good morning, Dea</h1>
           <p class="page-subtitle">Jaipur, India · Today</p>
-          <p class="page-note">It's 9:20 AM &ndash; your comfort usually dips around this time. <b>Your comfort has been trending lower this week.</b></p>
+          <p class="page-note">It's <span id="currentTime">9:20 AM</span> &ndash; your comfort usually dips around this time. <b>Your comfort has been trending lower this week.</b></p>
         </div>
 
         <div style="display:flex; gap:10px;">
@@ -90,35 +90,36 @@
 
       <!-- TODAY'S ENVIRONMENT PILL ROW -->
       <h2 class="section-heading">Today's Environment</h2>
-      <div class="pill-row" style="margin-bottom: 24px;">
-        <div class="env-pill" data-tip="AQI is 128 (Moderately elevated). 39% higher than your personal baseline (92).">
+        <div class="pill-row" style="margin-bottom: 24px;">
+          <div class="env-pill" data-tip="AQI is 128 (Moderately elevated). 39% higher than your personal baseline (92).">
           <span class="dot" style="background:var(--amber);"></span>
           <span class="label">AQI</span>
-          <span class="val">128</span>
+          <span class="val" id="currentAQI">128</span>
           <span class="delta change-up-bad">↗ +12</span>
         </div>
-        <div class="env-pill" data-tip="Temperature is 34°C (Hot). Warmer than your typical 28°C baseline.">
+        <div class="env-pill" data-tip="Temperature is 34°C (Hot). Warmer than your typical 28
+        °C baseline.">
             <span class="dot" style="background:var(--red);"></span>
             <span class="label">Temp</span>
-            <span class="val" id="currentTemp">34°C</span>
+            <span class="val" id="currentTemp">34</span>
             <span class="delta change-up-bad">↗ +2.1</span>
         </div>
         <div class="env-pill" data-tip="Humidity is 72% (High). 28% above your personal baseline of 56%.">
           <span class="dot" style="background:var(--blue);"></span>
           <span class="label">Humidity</span>
-          <span class="val">72%</span>
+          <span class="val" id="currentHumidity">72%</span>
           <span class="delta change-up-bad">↗ +4</span>
         </div>
         <div class="env-pill" data-tip="UV Index is High (8). Peak solar radiation between 11 AM - 3 PM.">
           <span class="dot" style="background:var(--purple);"></span>
           <span class="label">UV</span>
-          <span class="val">High</span>
+          <span class="val" id="currentUV">High</span>
           <span class="delta change-up-bad">↗ +1</span>
         </div>
         <div class="env-pill" data-tip="Pollen is Moderate. Grass and tree pollen present but stable.">
           <span class="dot" style="background:var(--green);"></span>
           <span class="label">Pollen</span>
-          <span class="val">Moderate</span>
+          <span class="val" id="currentPollen">Moderate</span>
           <span class="delta change-down-good">↘ -1</span>
         </div>
       </div>
@@ -138,11 +139,19 @@
           <p class="avg-highlight-line">On those 5 days, your average comfort was <b>4.2 / 10</b> (vs your avg 6.2).</p>
 
           <div class="cmp-bar-container">
-            <div class="cmp-row">
-              <div class="cmp-row-top">
-                <span class="label">Temperature</span>
-                <span class="vals"><span class="hi" style="color:var(--red-fg);">34°C</span> / 28°C</span>
-              </div>
+              <div class="cmp-row">
+                <div class="cmp-row-top">
+                  <span class="label">Temperature</span>
+                  <span class="vals">
+                    <span
+                      class="hi"
+                      id="comparisonTemp"
+                      style="color:var(--red-fg);"
+                    >34°C</span>
+                    /
+                    <span id="comparisonTempBaseline">28°C</span>
+                  </span>
+                </div>
               <div class="cmp-track">
                 <div class="cmp-fill" style="width: 78%; background: var(--red);"></div>
               </div>
@@ -150,7 +159,7 @@
             <div class="cmp-row">
               <div class="cmp-row-top">
                 <span class="label">Humidity</span>
-                <span class="vals"><span class="hi" style="color:var(--blue-fg);">72%</span> / 45%</span>
+                <span class="vals"><span class="hi" id="comparisonHumidity" style="color:var(--blue-fg);">72%</span> / 45%</span>
               </div>
               <div class="cmp-track">
                 <div class="cmp-fill" style="width: 82%; background: var(--blue);"></div>
@@ -159,7 +168,7 @@
             <div class="cmp-row" style="margin-bottom:0;">
               <div class="cmp-row-top">
                 <span class="label">AQI</span>
-                <span class="vals"><span class="hi" style="color:var(--amber-fg);">128</span> / 92</span>
+                <span class="vals"><span class="hi" id="comparisonAQI" style="color:var(--amber-fg);">128</span> / 92</span>
               </div>
               <div class="cmp-track">
                 <div class="cmp-fill" style="width: 70%; background: var(--amber);"></div>
@@ -335,6 +344,7 @@
         <canvas id="recentPatternChart" height="84"></canvas>
       </div>
 
+
     </main>
   </div>
 </div>
@@ -346,10 +356,26 @@
       <h3 class="card-heading">Why was this flagged?</h3>
       <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
     </div>
-    <p class="body-text">Today's humidity (72%) and AQI (128) are significantly above your personal baseline. AIRGUARD cross-referenced your 30-day records and identified 5 previous matching days where you reported a sharp dip in physical comfort.</p>
+    <p class="body-text" id="environmentExplanation">
+        Today's humidity (72%) and AQI (128) are significantly above your
+        personal baseline. AIRGUARD cross-referenced your 30-day records
+        and identified 5 previous matching days where you reported a sharp
+        dip in physical comfort.
+    </p>
     
-    <div class="modal-datarow"><span class="k">Today's conditions</span><span class="v">34°C · 72% humidity · AQI 128</span></div>
-    <div class="modal-datarow"><span class="k">Historical baseline</span><span class="v">28°C · 56% humidity · AQI 92</span></div>
+    <div class="modal-datarow">
+        <span class="k">Today's conditions</span>
+        <span class="v" id="todayConditions">
+            34°C · 72% humidity · AQI 128
+        </span>
+    </div>
+
+    <div class="modal-datarow">
+        <span class="k">Historical baseline</span>
+        <span class="v" id="historicalBaseline">
+            28°C · 56% humidity · AQI 92
+        </span>
+    </div>
     <div class="modal-datarow"><span class="k">Matching days</span><span class="v">5 days (Aug 12, Aug 08, Aug 03, Jul 26, Jul 22)</span></div>
     <div class="modal-datarow"><span class="k">Average comfort on match days</span><span class="v" style="color:var(--red-fg);">4.2 / 10</span></div>
     <div class="modal-datarow"><span class="k">Pattern strength</span><span class="v" style="color:var(--purple-fg);">Moderate (84% confidence)</span></div>

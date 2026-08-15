@@ -346,29 +346,8 @@
     initSliders();
     initChips();
     updateCurrentEnvironment();
-  });
-
-  // temporary
-  document.addEventListener('DOMContentLoaded', async () => {
-    initTooltips();
-    initModals();
-    initMobileNav();
-    initThemeState();
-    initSliders();
-    initChips();
-
-    try {
-      const location = getSavedLocation();
-
-      const conditions = await fetchCurrentConditions(
-        location.lat,
-        location.lng
-      );
-
-      console.log("AIRGUARD backend data:", conditions);
-    } catch (error) {
-      console.error("Could not connect to AIRGUARD backend:", error);
-    }
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 60000);
   });
   
   // Tooltip Engine
@@ -524,26 +503,219 @@
     }
   }
 
-  // Updates the current location and fetches data.
-  async function updateCurrentEnvironment() {
-    const location = getSavedLocation();
+  //  Updates Temperature
+  function updateTemperature(conditions) {
+      const temp = conditions.temperature_c;
 
-    try {
-      const conditions = await fetchCurrentConditions(
-        location.lat,
-        location.lng
-      );
+      if (temp == null) return;
 
+      function getTempLevel(temp) {
+          if (temp <= 0) return "Freezing";
+          if (temp <= 10) return "Cold";
+          if (temp <= 20) return "Cool";
+          if (temp <= 25) return "Warm";
+          return "Hot";
+      }
+
+      const roundedTemp = Math.round(temp);
+
+      // Temperature pill
       const tempEl = document.getElementById("currentTemp");
 
       if (tempEl) {
-        tempEl.textContent = `${Math.round(conditions.temperature_c)}°C`;
+          tempEl.textContent = `${roundedTemp}°C`;
+
+          tempEl.parentElement.dataset.tip =
+              `Temperature is ${roundedTemp}°C today (${getTempLevel(temp)}).`;
       }
 
-      console.log("Environment loaded:", conditions);
+      // Comparison temperature
+      const comparisonTemp =
+          document.getElementById("comparisonTemp");
 
-    } catch (error) {
-      console.error("Failed to load environment:", error);
-    }
+      if (comparisonTemp) {
+          comparisonTemp.textContent = `${roundedTemp}°C`;
+      }
+
+      // Temperature baseline
+      const baselineTemp =
+          document.getElementById("comparisonTempBaseline");
+
+      if (baselineTemp) {
+          baselineTemp.textContent = `${BASELINE.temp}°C`;
+      }
   }
+
+  // Updates AQI
+  function updateAQI(conditions) {
+      const aqi = conditions.aqi;
+
+      if (aqi == null) return;
+
+      // Current AQI pill
+      const aqiEl =
+          document.getElementById("currentAQI");
+
+      if (aqiEl) {
+          aqiEl.textContent = aqi;
+
+          aqiEl.parentElement.dataset.tip =
+              `AQI is ${aqi} today.`;
+      }
+
+      // AQI comparison
+      const comparisonAQI =
+          document.getElementById("comparisonAQI");
+
+      if (comparisonAQI) {
+          comparisonAQI.textContent = aqi;
+      }
+
+      // AQI baseline
+      const comparisonAQIBaseline =
+          document.getElementById("comparisonAQIBaseline");
+
+      if (comparisonAQIBaseline) {
+          comparisonAQIBaseline.textContent =
+              BASELINE.aqi;
+      }
+  }
+
+
+  // Updates Humidity
+  function updateHumidity(conditions) {
+      const humidity = conditions.humidity_pct;
+
+      if (humidity == null) return;
+
+      const roundedHumidity = Math.round(humidity);
+
+      // Current humidity
+      const humidityEl =
+          document.getElementById("currentHumidity");
+
+      if (humidityEl) {
+          humidityEl.textContent =
+              `${roundedHumidity}%`;
+
+          humidityEl.parentElement.dataset.tip =
+              `Humidity is ${roundedHumidity}% today.`;
+      }
+
+      // Humidity comparison
+      const comparisonHumidity =
+          document.getElementById("comparisonHumidity");
+
+      if (comparisonHumidity) {
+          comparisonHumidity.textContent =
+              `${roundedHumidity}%`;
+      }
+
+      // Humidity baseline
+      const comparisonHumidityBaseline =
+          document.getElementById("comparisonHumidityBaseline");
+
+      if (comparisonHumidityBaseline) {
+          comparisonHumidityBaseline.textContent =
+              `${BASELINE.humidity}%`;
+      }
+  }
+
+
+  // updates UV
+  function updateUV(conditions) {
+      const uv = conditions.uv_index;
+
+      if (uv == null) return;
+
+      function getUVLevel(uv) {
+          if (uv <= 2) return "Low";
+          if (uv <= 5) return "Moderate";
+          if (uv <= 7) return "High";
+          if (uv <= 10) return "Very High";
+          return "Extreme";
+      }
+
+      const level = getUVLevel(uv);
+
+      const uvEl =
+          document.getElementById("currentUV");
+
+      if (uvEl) {
+          uvEl.textContent = level;
+
+          uvEl.parentElement.dataset.tip =
+              `UV index is ${uv} (${level}).`;
+      }
+  }
+
+
+  // Updates Pollen
+  function updatePollen(conditions) {
+      const pollenEl =
+          document.getElementById("currentPollen");
+
+      if (!pollenEl) return;
+
+      const level = conditions.pollen_level;
+
+      if (!level) return;
+
+      pollenEl.textContent = level;
+
+      pollenEl.parentElement.dataset.tip =
+          `Pollen levels are ${level} today.`;
+  }
+
+
+  // Main environment update
+  async function updateCurrentEnvironment() {
+      const location = getSavedLocation();
+
+      try {
+          const conditions = await fetchCurrentConditions(
+              location.lat,
+              location.lng
+          );
+
+          // Update each environmental factor
+          updateTemperature(conditions);
+          updateAQI(conditions);
+          updateHumidity(conditions);
+          updateUV(conditions);
+          updatePollen(conditions);
+
+          // Today's conditions
+          const todayEl =
+              document.getElementById("todayConditions");
+
+          if (todayEl) {
+              todayEl.textContent =
+                  `${Math.round(conditions.temperature_c)}°C · ` +
+                  `${Math.round(conditions.humidity_pct)}% humidity · ` +
+                  `AQI ${conditions.aqi ?? "N/A"}`;
+          }
+
+          console.log("Environment loaded:", conditions);
+
+      } catch (error) {
+          console.error(
+              "Failed to load environment:",
+              error
+          );
+      }
+  }
+
+  function updateCurrentTime() {
+    const timeEl = document.getElementById("currentTime");
+
+    if (!timeEl) return;
+
+    const now = new Date();
+
+    timeEl.textContent = now.toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit"
+    });
+}
 })();
