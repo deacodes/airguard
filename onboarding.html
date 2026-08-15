@@ -1,174 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AIRGUARD — Welcome Onboarding</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body style="background:var(--app-bg);">
 
-<div class="onboard-page-container">
-  <div class="onboard-card-wrapper fade-in">
-    
-    <!-- STEPPER HEADER -->
-    <div class="onboard-stepper-bar">
-      <div class="onboard-steps-indicator" id="pageOnboardDots">
-        <span class="active"></span><span></span><span></span><span></span>
-      </div>
-      <a href="dashboard.html" class="secondary-text" style="font-size:12.5px; font-weight:700;">Skip to Dashboard →</a>
-    </div>
+  <div class="onboard-page-container">
+    <div class="onboard-card-wrapper fade-in">
 
-    <!-- STEP 1: WELCOME -->
-    <div class="onboard-page-step active" data-step="0">
-      <span class="landing-hero-tag" style="margin-bottom:12px;">STEP 1 OF 4</span>
-      <h2 class="onboard-h2">Welcome to AIRGUARD</h2>
-      <p class="onboard-desc">
-        A peaceful, intelligent app that helps you discover how weather and air quality affect your energy and comfort. No confusing scores or diagnoses &ndash; just clear, personal evidence.
-      </p>
-
-      <div class="choice-grid">
-        <div class="choice-card selected" data-group="goal">
-          <b>Understand My Triggers</b>
-          <span>See how heat, humidity, or AQI impact my daily comfort.</span>
+      <!-- STEPPER HEADER -->
+      <div class="onboard-stepper-bar">
+        <div class="onboard-steps-indicator" id="pageOnboardDots">
+          <span class="active"></span><span></span><span></span><span></span><span></span>
         </div>
-        <div class="choice-card" data-group="goal">
-          <b>Plan Better Activity Windows</b>
-          <span>Find the ideal time for outdoor runs, walks, or study sessions.</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- STEP 2: LOCATION BASELINE -->
-    <div class="onboard-page-step" data-step="1">
-      <span class="landing-hero-tag" style="margin-bottom:12px;">STEP 2 OF 4</span>
-      <h2 class="onboard-h2">Where are you located?</h2>
-      <p class="onboard-desc">
-        AIRGUARD will calibrate its 30-day personal baseline model against your local weather patterns.
-      </p>
-
-      <div class="field" style="margin-bottom:16px;">
-        <label for="onboardCity">Select Primary City</label>
-        <select id="onboardCity">
-          <option selected>Jaipur, India</option>
-          <option>New Delhi, India</option>
-          <option>London, UK</option>
-          <option>New York, USA</option>
-          <option>Tokyo, Japan</option>
-        </select>
+        <a href="dashboard.html" class="secondary-text" style="font-size:12.5px; font-weight:700;">Skip to Dashboard
+          →</a>
       </div>
 
-      <div class="choice-grid">
-        <div class="choice-card selected" data-group="units">
-          <b>Celsius (°C) &amp; Metric</b>
-          <span>Standard climate units.</span>
-        </div>
-        <div class="choice-card" data-group="units">
-          <b>Fahrenheit (°F) &amp; Imperial</b>
-          <span>US climate units.</span>
-        </div>
-      </div>
-    </div>
+      <!-- STEP 1: WELCOME -->
+      <div class="onboard-page-step active" data-step="0">
+        <span class="landing-hero-tag" style="margin-bottom:12px;">STEP 1 OF 5</span>
+        <h2 class="onboard-h2">Welcome to AIRGUARD</h2>
+        <p class="onboard-desc">
+          Please sign in or create an account to get started.
+        </p>
 
-    <!-- STEP 3: WELLNESS FOCUS -->
-    <div class="onboard-page-step" data-step="2">
-      <span class="landing-hero-tag" style="margin-bottom:12px;">STEP 3 OF 4</span>
-      <h2 class="onboard-h2">What would you like to track?</h2>
-      <p class="onboard-desc">
-        Choose the areas where you'd like AIRGUARD to surface pattern insights first. You can select multiple.
-      </p>
+        <div class="field" style="margin-bottom:16px;">
+          <label for="onboardEmail" style="display:block; margin-bottom: 4px; font-weight: 600;">Email Address</label>
+          <input type="email" id="onboardEmail" class="form-input"
+            style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box;">
+        </div>
+        <div class="field" style="margin-bottom:16px;">
+          <label for="onboardPassword" style="display:block; margin-bottom: 4px; font-weight: 600;">Password</label>
+          <input type="password" id="onboardPassword" class="form-input"
+            style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box;">
+        </div>
 
-      <div class="choice-grid">
-        <div class="choice-card selected" data-group="focus">
-          <b>Fatigue &amp; Physical Energy</b>
-          <span>Correlate afternoon slumps with humidity and heat.</span>
-        </div>
-        <div class="choice-card selected" data-group="focus">
-          <b>Air Quality &amp; Respiratory Ease</b>
-          <span>Track PM2.5 spikes and nasal congestion.</span>
-        </div>
-        <div class="choice-card" data-group="focus">
-          <b>Sleep Restoration</b>
-          <span>See if bedtime temperatures impact sleep duration.</span>
-        </div>
-        <div class="choice-card" data-group="focus">
-          <b>Outdoor Workouts</b>
-          <span>Get optimal time window suggestions for exercises.</span>
+        <div style="text-align: center; margin-top: 16px; font-size: 13px;">
+          <span class="secondary-text">Don't have an account?</span>
+          <a href="#" style="color: var(--brand); font-weight: 700; text-decoration: none;" id="toggleAuthMode">Create
+            Account</a>
         </div>
       </div>
-    </div>
-
-    <!-- STEP 4: PRIVACY & LAUNCH -->
-    <div class="onboard-page-step" data-step="3">
-      <span class="landing-hero-tag" style="margin-bottom:12px;">STEP 4 OF 4</span>
-      <h2 class="onboard-h2">Your Privacy Is Guaranteed</h2>
-      <p class="onboard-desc">
-        Your wellness check-ins remain 100% encrypted in your local browser sandbox. Raw health logs are never uploaded to servers or sold.
-      </p>
-
-      <div class="card" style="background:var(--green-bg); border-color:#BDE6D5; margin-top:10px;">
-        <div style="font-size:14px; font-weight:700; color:var(--green-fg);">✓ Ready to explore your dashboard</div>
-        <div class="secondary-text" style="margin-top:4px;">We've prepared your 30-day Jaipur baseline dataset with real-time pattern intelligence.</div>
+      <!-- STEP 2: GOALS -->
+      <div class="onboard-page-step" data-step="1">
+        <span class="landing-hero-tag" style="margin-bottom:12px;">STEP 2 OF 5</span>
+        <h2 class="onboard-h2">What's your primary goal?</h2>
+        <div class="choice-grid">
+          <div class="choice-card selected" data-group="goal">
+            <b>Understand My Triggers</b>
+            <span>See how heat, humidity, or AQI impact my daily comfort.</span>
+          </div>
+          <div class="choice-card" data-group="goal">
+            <b>Plan Better Activity Windows</b>
+            <span>Find the ideal time for outdoor runs, walks, or study sessions.</span>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- ACTIONS -->
-    <div class="onboard-actions-row">
-      <button type="button" class="btn btn-outline btn-sm" id="pageOnboardPrevBtn" style="visibility:hidden;">Back</button>
-      <button type="button" class="btn btn-dark" id="pageOnboardNextBtn" style="padding:12px 24px;">Continue</button>
-    </div>
+      <!-- STEP 3: LOCATION BASELINE -->
+      <div class="onboard-page-step" data-step="2">
+        <span class="landing-hero-tag" style="margin-bottom:12px;">STEP 3 OF 5</span>
+        <h2 class="onboard-h2">Where are you located?</h2>
+        <p class="onboard-desc">
+          AIRGUARD will calibrate its 30-day personal baseline model against your local weather patterns.
+        </p>
 
+        <div class="field"
+          style="margin-bottom:16px; border: 1px solid var(--border); border-radius: 8px; height: 200px; background: #eef2f5; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; cursor: pointer;"
+          id="mapSelector">
+          <!-- Simple stylized map background -->
+          <div style="width: 100%; height: 100%; background: radial-gradient(circle at center, #cbd5e0, #e2e8f0);">
+          </div>
+          <div
+            style="position: absolute; color: #4a5568; font-size: 14px; font-weight: 600; text-align: center; padding: 10px; background: rgba(255,255,255,0.8); border-radius: 8px;">
+            Tap to Pin Your Location
+          </div>
+          <div
+            style="position: absolute; bottom: 10px; left: 10px; background: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; border: 1px solid var(--border); color: #718096;"
+            id="onboardLocationDisplay">
+            Selected: Jaipur, India
+          </div>
+        </div>
+
+        <div class="choice-grid">
+          <div class="choice-card selected" data-group="units">
+            <b>Celsius (°C) &amp; Metric</b>
+            <span>Standard climate units.</span>
+          </div>
+          <div class="choice-card" data-group="units">
+            <b>Fahrenheit (°F) &amp; Imperial</b>
+            <span>US climate units.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: WELLNESS FOCUS -->
+      <div class="onboard-page-step" data-step="3">
+        <span class="landing-hero-tag" style="margin-bottom:12px;">STEP 4 OF 5</span>
+        <h2 class="onboard-h2">What would you like to track?</h2>
+        <p class="onboard-desc">
+          Choose the areas where you'd like AIRGUARD to surface pattern insights first. You can select multiple.
+        </p>
+
+        <div class="choice-grid">
+          <div class="choice-card selected" data-group="focus">
+            <b>Fatigue &amp; Physical Energy</b>
+            <span>Correlate afternoon slumps with humidity and heat.</span>
+          </div>
+          <div class="choice-card selected" data-group="focus">
+            <b>Air Quality &amp; Respiratory Ease</b>
+            <span>Track PM2.5 spikes and nasal congestion.</span>
+          </div>
+          <div class="choice-card" data-group="focus">
+            <b>Sleep Restoration</b>
+            <span>See if bedtime temperatures impact sleep duration.</span>
+          </div>
+          <div class="choice-card" data-group="focus">
+            <b>Outdoor Workouts</b>
+            <span>Get optimal time window suggestions for exercises.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 5: PRIVACY & LAUNCH -->
+      <div class="onboard-page-step" data-step="4">
+        <span class="landing-hero-tag" style="margin-bottom:12px;">STEP 5 OF 5</span>
+        <h2 class="onboard-h2">Your Privacy Is Guaranteed</h2>
+        <p class="onboard-desc">
+          Your wellness check-ins remain 100% encrypted in your local browser sandbox. Raw health logs are never
+          uploaded to servers or sold.
+        </p>
+
+        <div class="card" style="background:var(--green-bg); border-color:#BDE6D5; margin-top:10px;">
+          <div style="font-size:14px; font-weight:700; color:var(--green-fg);">✓ Ready to explore your dashboard</div>
+          <div class="secondary-text" style="margin-top:4px;">We've prepared your 30-day Jaipur baseline dataset with
+            real-time pattern intelligence.</div>
+        </div>
+      </div>
+
+      <!-- ACTIONS -->
+      <div class="onboard-actions-row">
+        <button type="button" class="btn btn-outline btn-sm" id="pageOnboardPrevBtn"
+          style="visibility:hidden;">Back</button>
+        <button type="button" class="btn btn-dark" id="pageOnboardNextBtn" style="padding:12px 24px;">Continue</button>
+      </div>
+
+    </div>
   </div>
-</div>
 
-<script src="js/main.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  let step = 0;
-  const nextBtn = document.getElementById('pageOnboardNextBtn');
-  const prevBtn = document.getElementById('pageOnboardPrevBtn');
-  const stepElements = document.querySelectorAll('.onboard-page-step');
-  const dots = document.querySelectorAll('#pageOnboardDots span');
+  <script src="js/main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      let step = 0;
+      const nextBtn = document.getElementById('pageOnboardNextBtn');
+      const prevBtn = document.getElementById('pageOnboardPrevBtn');
+      const stepElements = document.querySelectorAll('.onboard-page-step');
+      const dots = document.querySelectorAll('#pageOnboardDots span');
 
-  function renderStep(n) {
-    step = Math.max(0, Math.min(3, n));
-    stepElements.forEach((el, idx) => el.classList.toggle('active', idx === step));
-    dots.forEach((d, idx) => d.classList.toggle('active', idx <= step));
-    if (prevBtn) prevBtn.style.visibility = step === 0 ? 'hidden' : 'visible';
-    if (nextBtn) nextBtn.textContent = step === 3 ? 'Launch My Dashboard →' : 'Continue';
-  }
+      function renderStep(n) {
+        step = Math.max(0, Math.min(4, n));
+        stepElements.forEach((el, idx) => el.classList.toggle('active', idx === step));
 
-  if (nextBtn) {
-    nextBtn.addEventListener('click', () => {
-      if (step === 3) {
-        localStorage.setItem('airguard_onboard_seen', 'true');
-        window.location.href = 'dashboard.html';
-      } else {
-        renderStep(step + 1);
+        // Update dots count
+        const dotsContainer = document.getElementById('pageOnboardDots');
+        dotsContainer.innerHTML = Array.from({ length: 5 }, (_, i) => `<span class="${i <= step ? 'active' : ''}"></span>`).join('');
+        if (prevBtn) prevBtn.style.visibility = step === 0 ? 'hidden' : 'visible';
+        if (nextBtn) nextBtn.textContent = step === 4 ? 'Launch My Dashboard →' : 'Continue';
       }
-    });
-  }
 
-  if (prevBtn) {
-    prevBtn.addEventListener('click', () => renderStep(step - 1));
-  }
-
-  // Interactive selection card toggle
-  document.querySelectorAll('.choice-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const group = card.dataset.group;
-      if (group === 'goal' || group === 'units') {
-        document.querySelectorAll(`.choice-card[data-group="${group}"]`).forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-      } else {
-        card.classList.toggle('selected');
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          if (step === 4) {
+            localStorage.setItem('airguard_onboard_seen', 'true');
+            window.location.href = 'dashboard.html';
+          } else {
+            renderStep(step + 1);
+          }
+        });
       }
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', () => renderStep(step - 1));
+      }
+
+      // Interactive selection card toggle
+      document.querySelectorAll('.choice-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const group = card.dataset.group;
+          if (group === 'goal' || group === 'units') {
+            document.querySelectorAll(`.choice-card[data-group="${group}"]`).forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+          } else {
+            card.classList.toggle('selected');
+          }
+        });
+      });
+
+      // Map selector click simulation
+      document.getElementById('mapSelector').addEventListener('click', () => {
+        const locations = ["Jaipur, India", "New Delhi, India", "London, UK", "New York, USA", "Tokyo, Japan"];
+        const randomLoc = locations[Math.floor(Math.random() * locations.length)];
+        document.getElementById('onboardLocationDisplay').textContent = `Selected: ${randomLoc}`;
+      });
+
+      // Toggle Auth Mode
+      const toggleAuth = document.getElementById('toggleAuthMode');
+      toggleAuth.addEventListener('click', (e) => {
+        e.preventDefault();
+        const h2 = document.querySelector('.onboard-page-step[data-step="0"] h2');
+        if (h2.textContent === "Welcome to AIRGUARD") {
+          h2.textContent = "Create your account";
+          toggleAuth.textContent = "Sign In instead";
+          document.querySelector('.onboard-desc').textContent = "Join AIRGUARD to sync your baseline across devices.";
+          nextBtn.textContent = "Create Account & Continue";
+        } else {
+          h2.textContent = "Welcome to AIRGUARD";
+          toggleAuth.textContent = "Create Account";
+          document.querySelector('.onboard-desc').textContent = "Please sign in or create an account to get started.";
+          nextBtn.textContent = "Continue";
+        }
+      });
     });
-  });
-});
-</script>
+  </script>
 </body>
+
 </html>
