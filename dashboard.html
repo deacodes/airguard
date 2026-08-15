@@ -84,6 +84,8 @@
 
         <div style="display:flex; gap:10px;">
           <a href="checkin.html" class="btn btn-dark btn-sm">Take Check-in →</a>
+          <a href="timeline.html" class="btn btn-outline btn-sm">Past Check-ins</a>
+          <a href="timeline.html#timelineActivityHistory" class="btn btn-outline btn-sm">Past Activities</a>
           <a href="ai.html" class="btn btn-purple btn-sm">Ask AIRGUARD AI</a>
         </div>
       </div>
@@ -94,32 +96,32 @@
           <div class="env-pill" data-tip="AQI is 128 (Moderately elevated). 39% higher than your personal baseline (92).">
           <span class="dot" style="background:var(--amber);"></span>
           <span class="label">AQI</span>
-          <span class="val" id="currentAQI">128</span>
+          <span class="val" id="currentAQI">—</span>
           <span class="delta change-up-bad">↗ +12</span>
         </div>
         <div class="env-pill" data-tip="Temperature is 34°C (Hot). Warmer than your typical 28
         °C baseline.">
             <span class="dot" style="background:var(--red);"></span>
             <span class="label">Temp</span>
-            <span class="val" id="currentTemp">34</span>
+            <span class="val" id="currentTemp">—</span>
             <span class="delta change-up-bad">↗ +2.1</span>
         </div>
         <div class="env-pill" data-tip="Humidity is 72% (High). 28% above your personal baseline of 56%.">
           <span class="dot" style="background:var(--blue);"></span>
           <span class="label">Humidity</span>
-          <span class="val" id="currentHumidity">72%</span>
+          <span class="val" id="currentHumidity">—</span>
           <span class="delta change-up-bad">↗ +4</span>
         </div>
         <div class="env-pill" data-tip="UV Index is High (8). Peak solar radiation between 11 AM - 3 PM.">
           <span class="dot" style="background:var(--purple);"></span>
           <span class="label">UV</span>
-          <span class="val" id="currentUV">High</span>
+          <span class="val" id="currentUV">—</span>
           <span class="delta change-up-bad">↗ +1</span>
         </div>
         <div class="env-pill" data-tip="Pollen is Moderate. Grass and tree pollen present but stable.">
           <span class="dot" style="background:var(--green);"></span>
           <span class="label">Pollen</span>
-          <span class="val" id="currentPollen">Moderate</span>
+          <span class="val" id="currentPollen">—</span>
           <span class="delta change-down-good">↘ -1</span>
         </div>
       </div>
@@ -128,7 +130,7 @@
       <div class="dash-2col">
 
         <!-- LEFT COLUMN: PERSONAL PATTERN DETECTED (PRIMARY FOCUS) -->
-        <div class="card insight-card">
+        <div class="card insight-card" id="dashboardPersonalInsight">
           <div class="insight-top">
             <span class="insight-icon-badge">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
@@ -181,6 +183,10 @@
               <span class="t">Comfort comparison</span>
               <span class="s">Today vs baseline days</span>
             </div>
+            <div style="display:flex; gap:6px; margin:6px 0 8px;">
+              <button type="button" class="toggle-btn active" id="comfortMetricBtn">Comfort</button>
+              <button type="button" class="toggle-btn" id="energyMetricBtn">Energy</button>
+            </div>
             <canvas id="comfortComparisonChart" height="90"></canvas>
             <div class="mini-legend">
               <span><span class="sw" style="background:var(--blue);"></span>Baseline days</span>
@@ -195,7 +201,7 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
           
           <!-- TODAY'S SUGGESTION CARD -->
-          <div class="card">
+          <div class="card" id="dashboardSuggestionCard">
             <h2 class="section-heading" style="margin-bottom:8px;">Today's Suggestion</h2>
             <p class="body-text" style="font-weight:700;">Consider moving prolonged outdoor activity to a cooler part of the day.</p>
             <div class="suggestion-meta">
@@ -260,7 +266,7 @@
 
       <!-- YOUR WELLNESS 4 STAT CARDS -->
       <h2 class="section-heading">Your Wellness</h2>
-      <div class="grid grid-4">
+      <div class="grid grid-4" id="dashboardWellnessGrid">
         
         <div class="card stat-card">
           <div class="stat-top">
@@ -390,6 +396,11 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase.js"></script>
 <script src="js/main.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -398,14 +409,18 @@ document.addEventListener('DOMContentLoaded', () => {
   Chart.defaults.color = "#8A939A";
 
   // Comfort comparison mini chart on Overview insight card
-  const baselineComfortSeries = [6.4, 6.1, 6.7, 6.0, 6.5, 6.2, 6.6, 6.3];
-  const todayComfortSeries    = [5.2, 6.0, 5.4, 6.1, 5.0, 5.6, 4.6, 5.1];
+  const comfortRecords = (window.AIRGUARD?.daysData || []).filter(day => day.comfort != null);
+  const comfortAverage = comfortRecords.length ? comfortRecords.reduce((sum, day) => sum + Number(day.comfort), 0) / comfortRecords.length : null;
+  const latestComfort = comfortRecords.length ? Number(comfortRecords[comfortRecords.length - 1].comfort) : null;
+  const baselineComfortSeries = comfortAverage == null ? [] : [comfortAverage, comfortAverage];
+  const todayComfortSeries = latestComfort == null ? [] : [null, latestComfort];
   const compCtx = document.getElementById("comfortComparisonChart");
-  if (compCtx) {
-    new Chart(compCtx, {
+  let comfortChart = null;
+  if (compCtx && comfortRecords.length) {
+    comfortChart = new Chart(compCtx, {
       type: "line",
       data: {
-        labels: baselineComfortSeries.map((_, i) => i + 1),
+        labels: ['Baseline average', 'Today'],
         datasets: [
           { data: baselineComfortSeries, borderColor: "#2F6FEB", borderWidth: 2, pointRadius: 2.5, tension: 0.35 },
           { data: todayComfortSeries, borderColor: "#E5484D", borderWidth: 2, pointRadius: 2.5, tension: 0.35 }
@@ -414,10 +429,33 @@ document.addEventListener('DOMContentLoaded', () => {
       options: {
         responsive: true,
         plugins: { legend: { display: false }, tooltip: { enabled: false } },
-        scales: { x: { display: false }, y: { display: false, min: 3, max: 8 } }
+        scales: { x: { display: false }, y: { display: false, min: 0, max: 10 } }
       }
     });
   }
+  function updateComfortMetric(metric) {
+    if (!comfortChart) return;
+    const records = (window.AIRGUARD?.daysData || []).filter(day => day[metric] != null);
+    if (!records.length) return;
+    const average = records.reduce((sum, day) => sum + Number(day[metric]), 0) / records.length;
+    const latest = Number(records[records.length - 1][metric]);
+    comfortChart.data.datasets[0].data = [average, average];
+    comfortChart.data.datasets[1].data = [null, latest];
+    comfortChart.options.scales.y.min = 0;
+    comfortChart.options.scales.y.max = 10;
+    comfortChart.update();
+    document.querySelector('.mc-title .t').textContent = `${metric[0].toUpperCase() + metric.slice(1)} comparison`;
+  }
+  document.getElementById('comfortMetricBtn')?.addEventListener('click', () => {
+    document.getElementById('comfortMetricBtn').classList.add('active');
+    document.getElementById('energyMetricBtn').classList.remove('active');
+    updateComfortMetric('comfort');
+  });
+  document.getElementById('energyMetricBtn')?.addEventListener('click', () => {
+    document.getElementById('energyMetricBtn').classList.add('active');
+    document.getElementById('comfortMetricBtn').classList.remove('active');
+    updateComfortMetric('energy');
+  });
 
   // 7-Day Environment × Wellness dual-axis Chart
   const days = window.AIRGUARD ? window.AIRGUARD.daysData : [];

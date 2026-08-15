@@ -37,7 +37,7 @@
         <div class="onboard-steps-indicator" id="pageOnboardDots">
           <span class="active"></span><span></span><span></span><span></span><span></span>
         </div>
-        <a href="dashboard.html" class="secondary-text" style="font-size:12.5px; font-weight:700;">Skip to Dashboard
+        <a href="dashboard.html" id="demoLink" class="secondary-text" style="font-size:12.5px; font-weight:700;">View Demo
           →</a>
       </div>
 
@@ -49,6 +49,11 @@
           Please sign in or create an account to get started.
         </p>
 
+        <div class="field" style="margin-bottom:16px;">
+          <label for="onboardName" style="display:block; margin-bottom: 4px; font-weight: 600;">Your Name</label>
+          <input type="text" id="onboardName" class="form-input" placeholder="e.g. Dea"
+            style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box;">
+        </div>
         <div class="field" style="margin-bottom:16px;">
           <label for="onboardEmail" style="display:block; margin-bottom: 4px; font-weight: 600;">Email Address</label>
           <input type="email" id="onboardEmail" class="form-input"
@@ -87,7 +92,7 @@
         <span class="landing-hero-tag" style="margin-bottom:12px;">STEP 3 OF 5</span>
         <h2 class="onboard-h2">Where are you located?</h2>
         <p class="onboard-desc">
-          AIRGUARD will calibrate its 30-day personal baseline model against your local weather patterns.
+          AIRGUARD will use your selected location for live environmental conditions.
         </p>
 
         <div class="location-map-wrap" id="mapSelector">
@@ -141,14 +146,12 @@
         <span class="landing-hero-tag" style="margin-bottom:12px;">STEP 5 OF 5</span>
         <h2 class="onboard-h2">Your Privacy Is Guaranteed</h2>
         <p class="onboard-desc">
-          Your wellness check-ins remain 100% encrypted in your local browser sandbox. Raw health logs are never
-          uploaded to servers or sold.
+          Your wellness check-ins are stored in your private Firebase account. Raw health logs are never sold.
         </p>
 
         <div class="card" style="background:var(--green-bg); border-color:#BDE6D5; margin-top:10px;">
           <div style="font-size:14px; font-weight:700; color:var(--green-fg);">✓ Ready to explore your dashboard</div>
-          <div class="secondary-text" style="margin-top:4px;">We've prepared your 30-day Jaipur baseline dataset with
-            real-time pattern intelligence.</div>
+          <div class="secondary-text" style="margin-top:4px;">Your dashboard will start with your own check-ins and live environmental readings.</div>
         </div>
       </div>
 
@@ -162,10 +165,26 @@
     </div>
   </div>
 
-  <script src="js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase.js"></script>
+<script src="js/main.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       let step = 0;
+      let authMode = 'signin';
+      const waitForFirebase = () => new Promise(resolve => {
+        const started = Date.now();
+        const check = () => {
+          if (window.AIRGUARD_FIREBASE) return resolve(window.AIRGUARD_FIREBASE);
+          if (window.AIRGUARD_FIREBASE_SCRIPT_LOADED && window.AIRGUARD_FIREBASE_ERROR) return resolve(null);
+          if (Date.now() - started > 10000) return resolve(null);
+          setTimeout(check, 50);
+        };
+        check();
+      });
       const nextBtn = document.getElementById('pageOnboardNextBtn');
       const prevBtn = document.getElementById('pageOnboardPrevBtn');
       const stepElements = document.querySelectorAll('.onboard-page-step');
@@ -183,10 +202,46 @@
       }
 
       if (nextBtn) {
-        nextBtn.addEventListener('click', () => {
-          if (step === 4) {
-            localStorage.setItem('airguard_onboard_seen', 'true');
-            window.location.href = 'dashboard.html';
+        nextBtn.addEventListener('click', async () => {
+        if (step === 0) {
+          const email = document.getElementById('onboardEmail').value.trim();
+          const password = document.getElementById('onboardPassword').value;
+          if (!email || password.length < 6) { alert('Enter a valid email and a password of at least 6 characters.'); return; }
+          nextBtn.disabled = true;
+          try {
+            const firebase = await waitForFirebase();
+            if (!firebase) throw new Error(window.AIRGUARD_FIREBASE_ERROR || 'Account service is unavailable. Please reload and try again.');
+            let authenticatedUser;
+            if (authMode === 'signup') authenticatedUser = await firebase.signUp(email, password);
+            else {
+              authenticatedUser = await firebase.signIn(email, password);
+              const existing = await firebase.ready;
+              if (existing?.profile?.onboardingComplete) { window.location.href = 'dashboard.html'; return; }
+            }
+            firebase.clearDemoMode();
+            renderStep(1);
+          } catch (error) {
+            alert(error.code === 'auth/invalid-credential' ? 'Email or password is incorrect.' : (error.message || 'Could not authenticate.'));
+          } finally { nextBtn.disabled = false; }
+        } else if (step === 4) {
+          const firebase = await waitForFirebase();
+          const authenticatedUser = firebase?.currentUser?.();
+          if (!firebase || !authenticatedUser) { alert('Your session expired. Please sign in again.'); window.location.href = 'onboarding.html'; return; }
+          const selected = group => [...document.querySelectorAll(`.choice-card[data-group="${group}"].selected`)].map(card => card.querySelector('b')?.textContent);
+          const location = window.AIRGUARD.getSavedLocation();
+          nextBtn.disabled = true;
+          try {
+            const profile = { name: document.getElementById('onboardName').value.trim(), goal: selected('goal')[0], units: selected('units')[0], focus: selected('focus'), location, onboardingComplete: true, onboardedAt: new Date().toISOString() };
+            await Promise.race([
+              firebase.saveProfile(authenticatedUser, profile),
+              new Promise(resolve => setTimeout(resolve, 2000))
+            ]);
+          } catch (error) {
+            console.error('Firestore profile save failed; continuing with cached profile', error);
+          }
+          localStorage.setItem('airguard_onboard_seen', 'true');
+          nextBtn.disabled = false;
+          window.location.assign('./dashboard.html');
           } else {
             renderStep(step + 1);
           }
@@ -251,6 +306,11 @@
       onboardingMapScript.onload = initOnboardingMap;
       document.head.appendChild(onboardingMapScript);
 
+      document.getElementById('demoLink').addEventListener('click', () => {
+        window.AIRGUARD_FIREBASE?.setDemoMode();
+        localStorage.setItem('airguard_onboard_seen', 'true');
+      });
+
       // Toggle Auth Mode
       const toggleAuth = document.getElementById('toggleAuthMode');
       toggleAuth.addEventListener('click', (e) => {
@@ -260,12 +320,14 @@
           h2.textContent = "Create your account";
           toggleAuth.textContent = "Sign In instead";
           document.querySelector('.onboard-desc').textContent = "Join AIRGUARD to sync your baseline across devices.";
+          authMode = 'signup';
           nextBtn.textContent = "Create Account & Continue";
         } else {
           h2.textContent = "Welcome to AIRGUARD";
           toggleAuth.textContent = "Create Account";
           document.querySelector('.onboard-desc').textContent = "Please sign in or create an account to get started.";
-          nextBtn.textContent = "Continue";
+          authMode = 'signin';
+          nextBtn.textContent = "Sign In & Continue";
         }
       });
     });
