@@ -294,7 +294,9 @@
     DEFAULT_LOCATION,
     getSavedLocation,
     saveLocation,
-    reverseGeocode
+    reverseGeocode,
+    fetchCurrentConditions,
+    loadCurrentEnvironment
   };
 
   // =====================================================
@@ -343,8 +345,32 @@
     initThemeState();
     initSliders();
     initChips();
+    updateCurrentEnvironment();
   });
 
+  // temporary
+  document.addEventListener('DOMContentLoaded', async () => {
+    initTooltips();
+    initModals();
+    initMobileNav();
+    initThemeState();
+    initSliders();
+    initChips();
+
+    try {
+      const location = getSavedLocation();
+
+      const conditions = await fetchCurrentConditions(
+        location.lat,
+        location.lng
+      );
+
+      console.log("AIRGUARD backend data:", conditions);
+    } catch (error) {
+      console.error("Could not connect to AIRGUARD backend:", error);
+    }
+  });
+  
   // Tooltip Engine
   function initTooltips() {
     let tipEl = document.getElementById('tooltipBubble');
@@ -465,4 +491,59 @@
     });
   }
 
+  // fetch curent conditions from the location with latitude and longitude.
+  async function fetchCurrentConditions(lat, lng) {
+    const response = await fetch(
+      `http://127.0.0.1:5001/environment/current?lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Environment request failed: ${response.status}`);
+    }
+
+    return await response.json();
+  }
+
+  // load the current location 
+  async function loadCurrentEnvironment() {
+    const location = getSavedLocation();
+
+    try {
+      const conditions = await fetchCurrentConditions(
+        location.lat,
+        location.lng
+      );
+
+      console.log("Current environment:", conditions);
+
+      return conditions;
+    } catch (error) {
+      console.error("Failed to load environment:", error);
+      showToast("Could not load current environment data.");
+      return null;
+    }
+  }
+
+  // Updates the current location and fetches data.
+  async function updateCurrentEnvironment() {
+    const location = getSavedLocation();
+
+    try {
+      const conditions = await fetchCurrentConditions(
+        location.lat,
+        location.lng
+      );
+
+      const tempEl = document.getElementById("currentTemp");
+
+      if (tempEl) {
+        tempEl.textContent = `${Math.round(conditions.temperature_c)}°C`;
+      }
+
+      console.log("Environment loaded:", conditions);
+
+    } catch (error) {
+      console.error("Failed to load environment:", error);
+    }
+  }
 })();
