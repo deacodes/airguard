@@ -20,7 +20,14 @@
   try { firebase.analytics(); } catch (error) { console.info("Analytics unavailable", error); }
   const auth = firebase.auth();
   const db = firebase.firestore();
-  try { db.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch (error) {}
+  window.AIRGUARD_FIREBASE_PERSISTENCE = false;
+  try {
+    db.enablePersistence({ synchronizeTabs: true })
+      .then(() => { window.AIRGUARD_FIREBASE_PERSISTENCE = true; })
+      .catch(error => console.warn('Firestore offline persistence unavailable in this browser:', error.code || error.message));
+  } catch (error) {
+    console.warn('Firestore offline persistence unavailable in this browser:', error.code || error.message);
+  }
 
   const CACHE_PREFIX = "airguard_user_data_";
   const legacyCacheKey = "airguard_user_data";
@@ -84,10 +91,6 @@
     const cached = readCache(user.uid) || emptyData(user);
     updateCached(user, { profile: { ...cached.profile, ...payload } });
     await db.doc(`users/${user.uid}`).set(payload, { merge: true });
-    const saved = await db.doc(`users/${user.uid}`).get({ source: "server" });
-    if (!saved.exists || saved.data().onboardingComplete !== true && payload.onboardingComplete === true) {
-      throw new Error("Firebase did not confirm the onboarding profile save. Check your Firebase connection and rules.");
-    }
     return payload;
   }
 
@@ -110,13 +113,20 @@
     const localId = `local-${collection}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
     const key = collection === "checkins" ? "checkins" : collection === "activities" ? "activities" : "conversations";
     updateCached(user, { [key]: [{ id: localId, ...payload }, ...(cached[key] || [])] });
+
     const ref = await db.collection(`users/${user.uid}/${collection}`).add(payload);
-    const confirmed = await ref.get({ source: "server" });
-    if (!confirmed.exists) throw new Error(`Firebase did not confirm the ${collection} record.`);
+
+    // NEW: check whether this write actually reached Firestore's servers
+    // or is just sitting in the local offline queue.
+    const snap = await ref.get();
+    if (snap.metadata.hasPendingWrites) {
+      console.warn(`${collection} record is queued locally and hasn't reached Firestore's servers yet.`);
+    }
+
     const fresh = readCache(user.uid) || emptyData(user);
     fresh[key] = (fresh[key] || []).map(item => item.id === localId ? { ...item, id: ref.id } : item);
     writeCache(fresh);
-    return { id: ref.id, ...payload };
+    return { id: ref.id, ...payload, pendingSync: snap.metadata.hasPendingWrites };
   }
   async function saveCheckin(user, checkin) { return saveRecord(user, "checkins", checkin); }
   async function saveActivity(user, activity) { return saveRecord(user, "activities", activity); }

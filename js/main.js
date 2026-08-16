@@ -4,7 +4,7 @@
  * Pure Vanilla JavaScript · Local-first · Chart.js · Explainable Intelligence
  */
 
-(function() {
+(function () {
   'use strict';
 
   // Base constants & personal baselines
@@ -43,8 +43,8 @@
   function round1(v) { return Math.round(v * 10) / 10; }
 
   const todayDate = new Date(2026, 7, 15);
-  const SHORT_MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  const DAYS_OF_WEEK = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   // Generate 30 days of data
   function generate30Days() {
@@ -153,37 +153,37 @@
   let exampleEntry = daysData[daysData.length - 4];
 
   if (demoMode) {
-  todayEntry.aqi = 128;
-  todayEntry.temp = 34;
-  todayEntry.humidity = 72;
-  todayEntry.pm25 = 34;
-  todayEntry.pm10 = 68;
-  todayEntry.uv = "High";
-  todayEntry.pollen = "Moderate";
-  todayEntry.energy = 5.8;
-  todayEntry.comfort = 6.2;
-  todayEntry.sleep = 6.23; // 6h 14m
-  todayEntry.movement = 42;
-  todayEntry.symptoms = ["Headache", "Fatigue"];
-  todayEntry.activity = "Outside";
-  todayEntry.notes = "Hot afternoon walk.";
+    todayEntry.aqi = 128;
+    todayEntry.temp = 34;
+    todayEntry.humidity = 72;
+    todayEntry.pm25 = 34;
+    todayEntry.pm10 = 68;
+    todayEntry.uv = "High";
+    todayEntry.pollen = "Moderate";
+    todayEntry.energy = 5.8;
+    todayEntry.comfort = 6.2;
+    todayEntry.sleep = 6.23; // 6h 14m
+    todayEntry.movement = 42;
+    todayEntry.symptoms = ["Headache", "Fatigue"];
+    todayEntry.activity = "Outside";
+    todayEntry.notes = "Hot afternoon walk.";
 
-  yesterdayEntry.aqi = 116;
-  yesterdayEntry.temp = 31.9;
-  yesterdayEntry.humidity = 68;
-  yesterdayEntry.pollen = "High";
-  yesterdayEntry.energy = 6.4;
-  yesterdayEntry.comfort = 6.7;
+    yesterdayEntry.aqi = 116;
+    yesterdayEntry.temp = 31.9;
+    yesterdayEntry.humidity = 68;
+    yesterdayEntry.pollen = "High";
+    yesterdayEntry.energy = 6.4;
+    yesterdayEntry.comfort = 6.7;
 
-  exampleEntry.dateLabel = "Aug 12";
-  exampleEntry.aqi = 141;
-  exampleEntry.temp = 35;
-  exampleEntry.humidity = 69;
-  exampleEntry.energy = 4.0;
-  exampleEntry.comfort = 5.0;
-  exampleEntry.symptoms = ["Headache", "Congestion"];
-  exampleEntry.activity = "Outside";
-  exampleEntry.notes = "Walked home from school.";
+    exampleEntry.dateLabel = "Aug 12";
+    exampleEntry.aqi = 141;
+    exampleEntry.temp = 35;
+    exampleEntry.humidity = 69;
+    exampleEntry.energy = 4.0;
+    exampleEntry.comfort = 5.0;
+    exampleEntry.symptoms = ["Headache", "Congestion"];
+    exampleEntry.activity = "Outside";
+    exampleEntry.notes = "Walked home from school.";
   }
 
   // Pattern Database
@@ -488,6 +488,24 @@
     return (scratch.textContent || scratch.innerText || '').replace(/\s+/g, ' ').trim();
   }
 
+  // Escapes text for safe innerHTML insertion. Use for anything the user typed.
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // AI replies are allowed to use <b>...</b> for emphasis (per the system prompt) —
+  // escape everything, then re-enable just that one tag.
+  function sanitizeAIHtml(str) {
+    return escapeHtml(str)
+      .replace(/&lt;b&gt;/g, '<b>')
+      .replace(/&lt;\/b&gt;/g, '</b>');
+  }
+
   function dashboardBaseline(data) {
     const rows = personalRows(data);
     return {
@@ -579,9 +597,15 @@
       const currentEl = document.getElementById(currentId);
       const baselineEl = document.getElementById(baselineId);
       const fill = document.getElementById(fillId);
-      if (currentEl) currentEl.textContent = Number.isFinite(Number(currentValue)) ? `${Math.round(currentValue)}${suffix}` : '—';
-      if (baselineEl) baselineEl.textContent = Number.isFinite(Number(baselineValue)) ? `${Math.round(baselineValue)}${suffix}` : '—';
-      if (fill) fill.style.width = Number.isFinite(Number(currentValue)) ? `${Math.min(100, Math.max(3, Number(currentValue) / max * 100))}%` : '0';
+
+      const hasCurrent = Number.isFinite(Number(currentValue));
+      const hasBaseline = Number.isFinite(Number(baselineValue));
+
+      // Only touch the DOM if we actually have a real number — don't blank out
+      // a good value that a different (faster) update already wrote in.
+      if (hasCurrent && currentEl) currentEl.textContent = `${Math.round(currentValue)}${suffix}`;
+      if (hasBaseline && baselineEl) baselineEl.textContent = `${Math.round(baselineValue)}${suffix}`;
+      if (hasCurrent && fill) fill.style.width = `${Math.min(100, Math.max(3, Number(currentValue) / max * 100))}%`;
     });
     const text = document.getElementById('patternEvidenceText');
     if (text) text.textContent = pattern ? `${pattern.impactedDays} of ${pattern.matchingDays} similar saved days matched this pattern (${pattern.confidence}% consistency).` : 'No repeat is ready to show yet—AIRGUARD needs more saved days with linked environmental data.';
@@ -595,13 +619,15 @@
     try {
       const history = await window.AIRGUARD.fetchEnvironmentHistory(location.lat, location.lng, Math.min(90, Math.max(7, checkins.length + 2)));
       const byDate = Object.fromEntries((history || []).map(item => [String(item.date).slice(0, 10), item]));
-      const enriched = { ...data, checkins: checkins.map(item => {
-        if (item.environment && (item.environment.temperature_c != null || item.environment.humidity_pct != null || item.environment.aqi != null)) return item;
-        const date = localDateKey(item.createdAt || item.timestamp);
-        const environment = byDate[date];
-        if (!environment) return item;
-        return { ...item, environment: { temperature_c: environment.temp, humidity_pct: environment.humidity, aqi: environment.aqi, location: location.label, source: 'Open-Meteo historical conditions' } };
-      }) };
+      const enriched = {
+        ...data, checkins: checkins.map(item => {
+          if (item.environment && (item.environment.temperature_c != null || item.environment.humidity_pct != null || item.environment.aqi != null)) return item;
+          const date = localDateKey(item.createdAt || item.timestamp);
+          const environment = byDate[date];
+          if (!environment) return item;
+          return { ...item, environment: { temperature_c: environment.temp, humidity_pct: environment.humidity, aqi: environment.aqi, location: location.label, source: 'Open-Meteo historical conditions' } };
+        })
+      };
       const linked = enriched.checkins.filter(item => item.environment?.temperature_c != null || item.environment?.humidity_pct != null || item.environment?.aqi != null).length;
       if (linked >= 3) {
         const user = window.AIRGUARD_FIREBASE?.currentUser?.();
@@ -615,7 +641,7 @@
     } catch (error) { console.warn('Could not pair check-ins with environmental history', error); }
   }
 
-  async function populateMockData(days = 7, onProgress = () => {}) {
+  async function populateMockData(days = 7, onProgress = () => { }) {
     const user = window.AIRGUARD_FIREBASE?.currentUser?.();
     if (!user) throw new Error('Please sign in before populating this account.');
     const total = days === 30 ? 30 : 7;
@@ -733,7 +759,9 @@
     populateMockData,
     fetchCurrentConditions,
     fetchHourlyForecast,
-    loadCurrentEnvironment
+    loadCurrentEnvironment,
+    escapeHtml,
+    sanitizeAIHtml
   };
 
   window.AIRGUARD.ready = window.AIRGUARD_FIREBASE?.ready || Promise.resolve(null);
@@ -1034,7 +1062,7 @@
       });
     }).observe(main, { childList: true, subtree: true });
   }
-  
+
   // Tooltip Engine
   function initTooltips() {
     let tipEl = document.getElementById('tooltipBubble');
@@ -1213,223 +1241,223 @@
 
   //  Updates Temperature
   function updateTemperature(conditions) {
-      const temp = conditions.temperature_c;
+    const temp = conditions.temperature_c;
 
-      if (temp == null) return;
+    if (temp == null) return;
 
-      function getTempLevel(temp) {
-          if (temp <= 0) return "Freezing";
-          if (temp <= 10) return "Cold";
-          if (temp <= 20) return "Cool";
-          if (temp <= 25) return "Warm";
-          return "Hot";
-      }
+    function getTempLevel(temp) {
+      if (temp <= 0) return "Freezing";
+      if (temp <= 10) return "Cold";
+      if (temp <= 20) return "Cool";
+      if (temp <= 25) return "Warm";
+      return "Hot";
+    }
 
-      const roundedTemp = Math.round(temp);
+    const roundedTemp = Math.round(temp);
 
-      // Temperature pill
-      const tempEl = document.getElementById("currentTemp");
+    // Temperature pill
+    const tempEl = document.getElementById("currentTemp");
 
-      if (tempEl) {
-          tempEl.textContent = `${roundedTemp}°C`;
+    if (tempEl) {
+      tempEl.textContent = `${roundedTemp}°C`;
 
-          if (tempEl.parentElement) tempEl.parentElement.dataset.tip =
-              `Temperature is ${roundedTemp}°C today (${getTempLevel(temp)}).`;
-      }
-      const envTemp = document.getElementById('envTemperatureValue');
-      if (envTemp) envTemp.textContent = `${roundedTemp}°C`;
-      const activityTemp = document.getElementById('dispTemp');
-      if (activityTemp) activityTemp.textContent = `${roundedTemp}°C`;
-      const envFeels = document.getElementById('envFeelsLikeCaption');
-      if (envFeels && conditions.feels_like_c != null) envFeels.textContent = `Feels like ${Math.round(conditions.feels_like_c)}°C`;
+      if (tempEl.parentElement) tempEl.parentElement.dataset.tip =
+        `Temperature is ${roundedTemp}°C today (${getTempLevel(temp)}).`;
+    }
+    const envTemp = document.getElementById('envTemperatureValue');
+    if (envTemp) envTemp.textContent = `${roundedTemp}°C`;
+    const activityTemp = document.getElementById('dispTemp');
+    if (activityTemp) activityTemp.textContent = `${roundedTemp}°C`;
+    const envFeels = document.getElementById('envFeelsLikeCaption');
+    if (envFeels && conditions.feels_like_c != null) envFeels.textContent = `Feels like ${Math.round(conditions.feels_like_c)}°C`;
 
-      // Comparison temperature
-      const comparisonTemp =
-          document.getElementById("comparisonTemp");
+    // Comparison temperature
+    const comparisonTemp =
+      document.getElementById("comparisonTemp");
 
-      if (comparisonTemp) {
-          comparisonTemp.textContent = `${roundedTemp}°C`;
-      }
+    if (comparisonTemp) {
+      comparisonTemp.textContent = `${roundedTemp}°C`;
+    }
 
-      // Temperature baseline
-      const baselineTemp =
-          document.getElementById("comparisonTempBaseline");
+    // Temperature baseline
+    const baselineTemp =
+      document.getElementById("comparisonTempBaseline");
 
-      if (baselineTemp) {
-          baselineTemp.textContent = `${BASELINE.temp}°C`;
-      }
+    if (baselineTemp) {
+      baselineTemp.textContent = `${BASELINE.temp}°C`;
+    }
   }
 
   // Updates AQI
   function updateAQI(conditions) {
-      const aqi = conditions.aqi;
+    const aqi = conditions.aqi;
 
-      if (aqi == null) return;
+    if (aqi == null) return;
 
-      // Current AQI pill
-      const aqiEl =
-          document.getElementById("currentAQI");
+    // Current AQI pill
+    const aqiEl =
+      document.getElementById("currentAQI");
 
-      if (aqiEl) {
-          aqiEl.textContent = aqi;
+    if (aqiEl) {
+      aqiEl.textContent = aqi;
 
-          if (aqiEl.parentElement) aqiEl.parentElement.dataset.tip =
-              `AQI is ${aqi} today.`;
-      }
-      const envAqi = document.getElementById('envAqiValue');
-      if (envAqi) envAqi.textContent = aqi;
-      const activityAqi = document.getElementById('dispAqi');
-      if (activityAqi) activityAqi.textContent = aqi;
-      const envPm25 = document.getElementById('envPm25Value');
-      if (envPm25 && conditions.pm2_5 != null) envPm25.innerHTML = `${Math.round(conditions.pm2_5)} <span style="font-size:14px;font-weight:600">μg/m³</span>`;
+      if (aqiEl.parentElement) aqiEl.parentElement.dataset.tip =
+        `AQI is ${aqi} today.`;
+    }
+    const envAqi = document.getElementById('envAqiValue');
+    if (envAqi) envAqi.textContent = aqi;
+    const activityAqi = document.getElementById('dispAqi');
+    if (activityAqi) activityAqi.textContent = aqi;
+    const envPm25 = document.getElementById('envPm25Value');
+    if (envPm25 && conditions.pm2_5 != null) envPm25.innerHTML = `${Math.round(conditions.pm2_5)} <span style="font-size:14px;font-weight:600">μg/m³</span>`;
 
-      // AQI comparison
-      const comparisonAQI =
-          document.getElementById("comparisonAQI");
+    // AQI comparison
+    const comparisonAQI =
+      document.getElementById("comparisonAQI");
 
-      if (comparisonAQI) {
-          comparisonAQI.textContent = aqi;
-      }
+    if (comparisonAQI) {
+      comparisonAQI.textContent = aqi;
+    }
 
-      // AQI baseline
-      const comparisonAQIBaseline =
-          document.getElementById("comparisonAQIBaseline");
+    // AQI baseline
+    const comparisonAQIBaseline =
+      document.getElementById("comparisonAQIBaseline");
 
-      if (comparisonAQIBaseline) {
-          comparisonAQIBaseline.textContent =
-              BASELINE.aqi;
-      }
+    if (comparisonAQIBaseline) {
+      comparisonAQIBaseline.textContent =
+        BASELINE.aqi;
+    }
   }
 
 
   // Updates Humidity
   function updateHumidity(conditions) {
-      const humidity = conditions.humidity_pct;
+    const humidity = conditions.humidity_pct;
 
-      if (humidity == null) return;
+    if (humidity == null) return;
 
-      const roundedHumidity = Math.round(humidity);
+    const roundedHumidity = Math.round(humidity);
 
-      // Current humidity
-      const humidityEl =
-          document.getElementById("currentHumidity");
+    // Current humidity
+    const humidityEl =
+      document.getElementById("currentHumidity");
 
-      if (humidityEl) {
-          humidityEl.textContent =
-              `${roundedHumidity}%`;
+    if (humidityEl) {
+      humidityEl.textContent =
+        `${roundedHumidity}%`;
 
-          if (humidityEl.parentElement) humidityEl.parentElement.dataset.tip =
-              `Humidity is ${roundedHumidity}% today.`;
-      }
-      const envHumidity = document.getElementById('envHumidityValue');
-      if (envHumidity) envHumidity.textContent = `${roundedHumidity}%`;
-      const activityHumidity = document.getElementById('dispHumidity');
-      if (activityHumidity) activityHumidity.textContent = `${roundedHumidity}%`;
+      if (humidityEl.parentElement) humidityEl.parentElement.dataset.tip =
+        `Humidity is ${roundedHumidity}% today.`;
+    }
+    const envHumidity = document.getElementById('envHumidityValue');
+    if (envHumidity) envHumidity.textContent = `${roundedHumidity}%`;
+    const activityHumidity = document.getElementById('dispHumidity');
+    if (activityHumidity) activityHumidity.textContent = `${roundedHumidity}%`;
 
-      // Humidity comparison
-      const comparisonHumidity =
-          document.getElementById("comparisonHumidity");
+    // Humidity comparison
+    const comparisonHumidity =
+      document.getElementById("comparisonHumidity");
 
-      if (comparisonHumidity) {
-          comparisonHumidity.textContent =
-              `${roundedHumidity}%`;
-      }
+    if (comparisonHumidity) {
+      comparisonHumidity.textContent =
+        `${roundedHumidity}%`;
+    }
 
-      // Humidity baseline
-      const comparisonHumidityBaseline =
-          document.getElementById("comparisonHumidityBaseline");
+    // Humidity baseline
+    const comparisonHumidityBaseline =
+      document.getElementById("comparisonHumidityBaseline");
 
-      if (comparisonHumidityBaseline) {
-          comparisonHumidityBaseline.textContent =
-              `${BASELINE.humidity}%`;
-      }
+    if (comparisonHumidityBaseline) {
+      comparisonHumidityBaseline.textContent =
+        `${BASELINE.humidity}%`;
+    }
   }
 
 
   // updates UV
   function updateUV(conditions) {
-      const uv = conditions.uv_index;
+    const uv = conditions.uv_index;
 
-      if (uv == null) return;
+    if (uv == null) return;
 
-      function getUVLevel(uv) {
-          if (uv <= 2) return "Low";
-          if (uv <= 5) return "Moderate";
-          if (uv <= 7) return "High";
-          if (uv <= 10) return "Very High";
-          return "Extreme";
-      }
+    function getUVLevel(uv) {
+      if (uv <= 2) return "Low";
+      if (uv <= 5) return "Moderate";
+      if (uv <= 7) return "High";
+      if (uv <= 10) return "Very High";
+      return "Extreme";
+    }
 
-      const level = getUVLevel(uv);
+    const level = getUVLevel(uv);
 
-      const uvEl =
-          document.getElementById("currentUV");
+    const uvEl =
+      document.getElementById("currentUV");
 
-      if (uvEl) {
-          uvEl.textContent = level;
+    if (uvEl) {
+      uvEl.textContent = level;
 
-          if (uvEl.parentElement) uvEl.parentElement.dataset.tip =
-              `UV index is ${uv} (${level}).`;
-      }
-      const envUv = document.getElementById('envUvValue');
-      if (envUv) envUv.textContent = level;
+      if (uvEl.parentElement) uvEl.parentElement.dataset.tip =
+        `UV index is ${uv} (${level}).`;
+    }
+    const envUv = document.getElementById('envUvValue');
+    if (envUv) envUv.textContent = level;
   }
 
 
   // Updates Pollen
   function updatePollen(conditions) {
-      const pollenEl =
-          document.getElementById("currentPollen");
+    const pollenEl =
+      document.getElementById("currentPollen");
 
-      const level = conditions.pollen_level;
+    const level = conditions.pollen_level;
 
-      if (!level) return;
+    if (!level) return;
 
-      if (pollenEl) pollenEl.textContent = level;
-      const envPollen = document.getElementById('envPollenValue');
-      if (envPollen) envPollen.textContent = level;
+    if (pollenEl) pollenEl.textContent = level;
+    const envPollen = document.getElementById('envPollenValue');
+    if (envPollen) envPollen.textContent = level;
 
-      if (pollenEl?.parentElement) pollenEl.parentElement.dataset.tip =
-          `Pollen levels are ${level} today.`;
+    if (pollenEl?.parentElement) pollenEl.parentElement.dataset.tip =
+      `Pollen levels are ${level} today.`;
   }
 
 
   // Main environment update
   async function updateCurrentEnvironment() {
-      const location = getSavedLocation();
+    const location = getSavedLocation();
 
-      try {
-          const conditions = await fetchCurrentConditions(
-              location.lat,
-              location.lng
-          );
+    try {
+      const conditions = await fetchCurrentConditions(
+        location.lat,
+        location.lng
+      );
 
-          // Update each environmental factor
-          updateTemperature(conditions);
-          updateAQI(conditions);
-          updateHumidity(conditions);
-          updateUV(conditions);
-          updatePollen(conditions);
+      // Update each environmental factor
+      updateTemperature(conditions);
+      updateAQI(conditions);
+      updateHumidity(conditions);
+      updateUV(conditions);
+      updatePollen(conditions);
 
-          // Today's conditions
-          const todayEl =
-              document.getElementById("todayConditions");
+      // Today's conditions
+      const todayEl =
+        document.getElementById("todayConditions");
 
-          if (todayEl) {
-              todayEl.textContent =
-                  `${Math.round(conditions.temperature_c)}°C · ` +
-                  `${Math.round(conditions.humidity_pct)}% humidity · ` +
-                  `AQI ${conditions.aqi ?? "N/A"}`;
-          }
-
-          console.log("Environment loaded:", conditions);
-
-      } catch (error) {
-          console.error(
-              "Failed to load environment:",
-              error
-          );
+      if (todayEl) {
+        todayEl.textContent =
+          `${Math.round(conditions.temperature_c)}°C · ` +
+          `${Math.round(conditions.humidity_pct)}% humidity · ` +
+          `AQI ${conditions.aqi ?? "N/A"}`;
       }
+
+      console.log("Environment loaded:", conditions);
+
+    } catch (error) {
+      console.error(
+        "Failed to load environment:",
+        error
+      );
+    }
   }
 
   function updateCurrentTime() {
@@ -1440,8 +1468,8 @@
     const now = new Date();
 
     timeEl.textContent = now.toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit"
+      hour: "numeric",
+      minute: "2-digit"
     });
-}
+  }
 })();

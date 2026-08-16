@@ -267,7 +267,7 @@ function generateActivityAIContext() {
         throw new Error('AI returned an empty response');
       }
 
-      insightLine.innerHTML = data.reply;
+      insightLine.innerHTML = window.AIRGUARD.sanitizeAIHtml(data.reply);
 
     } catch (error) {
       console.warn('Activity AI unavailable:', error);

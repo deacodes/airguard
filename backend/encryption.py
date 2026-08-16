@@ -9,8 +9,13 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
  
-_SERVER_PEPPER = os.environ.get("AIRGUARD_PEPPER", "").encode() or os.urandom(32)
- 
+_pepper_raw = os.environ.get("AIRGUARD_PEPPER")
+if not _pepper_raw:
+    raise RuntimeError(
+        "AIRGUARD_PEPPER environment variable must be set — a random per-process "
+        "pepper would make all encrypted data unrecoverable after a restart."
+    )
+_SERVER_PEPPER = _pepper_raw.encode() 
 _NONCE_SIZE = 12
  
  

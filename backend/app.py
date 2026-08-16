@@ -8,7 +8,8 @@ from environmentalapi import get_current_conditions, get_history
 from ai_explainer import generate_ai_chat_reply
 
 app = Flask(__name__)
-CORS(app)
+
+CORS(app, origins=["http://127.0.0.1:5500", "http://localhost:5500"])
 
 
 @app.get("/environment/current")

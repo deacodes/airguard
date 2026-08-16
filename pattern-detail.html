@@ -246,6 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const last30 = days.slice(-30);
   const ctx = document.getElementById("patternDetailChart");
   if (ctx) {
+    window.Chart.getChart(ctx)?.destroy();
     new Chart(ctx, {
       type: "line",
       data: {

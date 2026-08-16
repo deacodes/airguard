@@ -1,267 +1,332 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AIRGUARD — Explainable AI</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
+
 <body>
 
-<div class="app">
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div class="app">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <!-- SIDEBAR NAVIGATION -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <span class="brand-dot"></span> AIRGUARD
-    </div>
-    <nav class="sidebar-nav">
-      <a href="dashboard.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.4"/><rect x="14" y="3" width="7" height="7" rx="1.4"/><rect x="3" y="14" width="7" height="7" rx="1.4"/><rect x="14" y="14" width="7" height="7" rx="1.4"/></svg>
-        Overview
-      </a>
-      <a href="checkin.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.4 2.4L16 9.5"/></svg>
-        Check-in
-      </a>
-      <a href="patterns.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 6h6v6"/></svg>
-        Patterns
-      </a>
-      <a href="timeline.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
-        Timeline
-      </a>
-      <a href="environment.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a13 13 0 0 1 0 18 13 13 0 0 1 0-18Z"/></svg>
-        Environment
-      </a>
-      <a href="activity.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 8-6-16-3 8H2"/></svg>
-        Activity
-      </a>
-      <a href="weekly-insights.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        Weekly Insights
-      </a>
-      <a href="ai.html" class="nav-link active">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
-        AirGuard AI
-      </a>
-    </nav>
-    <div class="sidebar-bottom">
-      <a href="settings.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.88.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06A2 2 0 1 1 19.83 7l-.06.06a1.7 1.7 0 0 0-.34 1.88v.01a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg>
-        Settings
-      </a>
-    </div>
-  </aside>
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-dot"></span> AIRGUARD
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1.4" />
+            <rect x="14" y="3" width="7" height="7" rx="1.4" />
+            <rect x="3" y="14" width="7" height="7" rx="1.4" />
+            <rect x="14" y="14" width="7" height="7" rx="1.4" />
+          </svg>
+          Overview
+        </a>
+        <a href="checkin.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="m8.5 12.5 2.4 2.4L16 9.5" />
+          </svg>
+          Check-in
+        </a>
+        <a href="patterns.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 17 6-6 4 4 8-8" />
+            <path d="M15 6h6v6" />
+          </svg>
+          Patterns
+        </a>
+        <a href="timeline.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M12 7.5V12l3 2" />
+          </svg>
+          Timeline
+        </a>
+        <a href="environment.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18M12 3a13 13 0 0 1 0 18 13 13 0 0 1 0-18Z" />
+          </svg>
+          Environment
+        </a>
+        <a href="activity.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 8-6-16-3 8H2" />
+          </svg>
+          Activity
+        </a>
+        <a href="weekly-insights.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" />
+          </svg>
+          Weekly Insights
+        </a>
+        <a href="ai.html" class="nav-link active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" />
+          </svg>
+          AirGuard AI
+        </a>
+      </nav>
+      <div class="sidebar-bottom">
+        <a href="settings.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+            <path
+              d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.88.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06A2 2 0 1 1 19.83 7l-.06.06a1.7 1.7 0 0 0-.34 1.88v.01a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z" />
+          </svg>
+          Settings
+        </a>
+      </div>
+    </aside>
 
-  <!-- MAIN VIEWPORT -->
-  <div class="main-content-wrap">
-    <div class="topbar-mobile">
-      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-      </button>
-      <div class="sidebar-brand" style="padding:0; color:var(--text);"><span class="brand-dot"></span> AIRGUARD</div>
-    </div>
-
-    <main class="main-viewport fade-in">
-      
-      <div class="page-header-row">
-        <h1 class="page-title">AIRGUARD AI</h1>
-        <p class="page-subtitle">Ask questions about your personal environment-wellness correlations. Clear explanations, zero diagnoses.</p>
+    <!-- MAIN VIEWPORT -->
+    <div class="main-content-wrap">
+      <div class="topbar-mobile">
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round">
+            <path d="M3 6h18M3 12h18M3 18h18" />
+          </svg>
+        </button>
+        <div class="sidebar-brand" style="padding:0; color:var(--text);"><span class="brand-dot"></span> AIRGUARD</div>
       </div>
 
-      <div style="display:grid; grid-template-columns:1.35fr 0.65fr; gap:20px; align-items:start;">
-        
-        <!-- CHAT SHELL CARD -->
-        <div class="card ai-shell">
-          <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border-soft);">
-            <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700;">
-              <span class="pulse-dot" style="width:7px; height:7px; background:var(--green); border-radius:50%;"></span>
-              Personal Intelligence Engine Ready
-            </div>
-            <span class="status-pill" style="color:var(--purple-fg); background:var(--purple-bg); font-size:11.5px; padding:4px 9px; border-radius:20px;">
-              Structured Parameters Only
-            </span>
-          </div>
+      <main class="main-viewport fade-in">
 
-          <!-- MESSAGES STREAM CONTAINER -->
-          <div class="ai-messages-wrap" id="aiChatBox">
-            
-            <div class="ai-msg">
-              <div class="ai-avatar bot">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
-              </div>
-              <div class="ai-bubble">
-                <b>AIRGUARD AI</b>
-                <p>Hello — I’m AIRGUARD AI. Add personal check-ins and environmental context, and I’ll be ready to help you explore them.</p>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- PROMPT SUGGESTION CHIPS -->
-          <div class="ai-prompts-row">
-            <button type="button" class="ai-prompt-chip" data-ask="Why was today flagged?">Why was today flagged?</button>
-            <button type="button" class="ai-prompt-chip" data-ask="What affects my comfort most?">What affects my comfort most?</button>
-            <button type="button" class="ai-prompt-chip" data-ask="How does today compare to yesterday?">Compare yesterday vs today</button>
-            <button type="button" class="ai-prompt-chip" data-ask="What is the best time for my run?">Best workout window?</button>
-          </div>
-
-          <!-- INPUT BAR -->
-          <div class="ai-input-bar">
-            <input type="text" id="aiInput" placeholder="Ask AIRGUARD about your patterns, environment, or suggestions…">
-            <button class="btn btn-dark" id="aiSendBtn" style="padding:11px 20px;">Send</button>
-          </div>
+        <div class="page-header-row">
+          <h1 class="page-title">AIRGUARD AI</h1>
+          <p class="page-subtitle">Ask questions about your personal environment-wellness correlations. Clear
+            explanations, zero diagnoses.</p>
         </div>
 
-        <!-- RIGHT COLUMN: PRIVACY BOUNDARY & STRUCTURED PARAMETERS -->
-        <div style="display:flex; flex-direction:column; gap:16px;">
-          
-          <div class="card">
-            <h3 class="card-heading" style="font-size:15px; margin-bottom:10px;">What the AI can inspect</h3>
-            <div style="display:flex; flex-direction:column; gap:10px;">
-              <div style="padding:10px 12px; background:var(--app-bg); border-radius:8px; font-size:12.5px;">
-                <b style="display:block; font-size:11px; text-transform:uppercase; color:var(--text-tertiary);">Environmental Feed</b>
-                <span>AQI 128 · 34°C · 72% humidity · UV High</span>
+        <div style="display:grid; grid-template-columns:1.35fr 0.65fr; gap:20px; align-items:start;">
+
+          <!-- CHAT SHELL CARD -->
+          <div class="card ai-shell">
+            <div
+              style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border-soft);">
+              <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700;">
+                <span class="pulse-dot"
+                  style="width:7px; height:7px; background:var(--green); border-radius:50%;"></span>
+                Personal Intelligence Engine Ready
+              </div>
+              <span class="status-pill"
+                style="color:var(--purple-fg); background:var(--purple-bg); font-size:11.5px; padding:4px 9px; border-radius:20px;">
+                Structured Parameters Only
+              </span>
+            </div>
+
+            <!-- MESSAGES STREAM CONTAINER -->
+            <div class="ai-messages-wrap" id="aiChatBox">
+
+              <div class="ai-msg">
+                <div class="ai-avatar bot">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                      d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" />
+                  </svg>
+                </div>
+                <div class="ai-bubble">
+                  <b>AIRGUARD AI</b>
+                  <p>Hello — I’m AIRGUARD AI. Add personal check-ins and environmental context, and I’ll be ready to
+                    help you explore them.</p>
+                </div>
               </div>
 
-              <div style="padding:10px 12px; background:var(--app-bg); border-radius:8px; font-size:12.5px;">
-                <b style="display:block; font-size:11px; text-transform:uppercase; color:var(--text-tertiary);">Baseline History</b>
-                <span>30 days logged · 11 high-humidity days · 9 high-AQI days</span>
+            </div>
+
+            <!-- PROMPT SUGGESTION CHIPS -->
+            <div class="ai-prompts-row">
+              <button type="button" class="ai-prompt-chip" data-ask="Why was today flagged?">Why was today
+                flagged?</button>
+              <button type="button" class="ai-prompt-chip" data-ask="What affects my comfort most?">What affects my
+                comfort most?</button>
+              <button type="button" class="ai-prompt-chip" data-ask="How does today compare to yesterday?">Compare
+                yesterday vs today</button>
+              <button type="button" class="ai-prompt-chip" data-ask="What is the best time for my run?">Best workout
+                window?</button>
+            </div>
+
+            <!-- INPUT BAR -->
+            <div class="ai-input-bar">
+              <input type="text" id="aiInput"
+                placeholder="Ask AIRGUARD about your patterns, environment, or suggestions…">
+              <button class="btn btn-dark" id="aiSendBtn" style="padding:11px 20px;">Send</button>
+            </div>
+          </div>
+
+          <!-- RIGHT COLUMN: PRIVACY BOUNDARY & STRUCTURED PARAMETERS -->
+          <div style="display:flex; flex-direction:column; gap:16px;">
+
+            <div class="card">
+              <h3 class="card-heading" style="font-size:15px; margin-bottom:10px;">What the AI can inspect</h3>
+              <div style="display:flex; flex-direction:column; gap:10px;">
+                <div style="padding:10px 12px; background:var(--app-bg); border-radius:8px; font-size:12.5px;">
+                  <b style="display:block; font-size:11px; text-transform:uppercase; color:var(--text-tertiary);">Environmental
+                    Feed</b>
+                  <span>AQI 128 · 34°C · 72% humidity · UV High</span>
+                </div>
+
+                <div style="padding:10px 12px; background:var(--app-bg); border-radius:8px; font-size:12.5px;">
+                  <b style="display:block; font-size:11px; text-transform:uppercase; color:var(--text-tertiary);">Baseline
+                    History</b>
+                  <span>30 days logged · 11 high-humidity days · 9 high-AQI days</span>
+                </div>
+
+                <div style="padding:10px 12px; background:var(--app-bg); border-radius:8px; font-size:12.5px;">
+                  <b style="display:block; font-size:11px; text-transform:uppercase; color:var(--text-tertiary);">Wellness
+                    Summary</b>
+                  <span>Energy 5.8 / 10 · Comfort 6.2 / 10 · Sleep 6h 14m</span>
+                </div>
               </div>
 
-              <div style="padding:10px 12px; background:var(--app-bg); border-radius:8px; font-size:12.5px;">
-                <b style="display:block; font-size:11px; text-transform:uppercase; color:var(--text-tertiary);">Wellness Summary</b>
-                <span>Energy 5.8 / 10 · Comfort 6.2 / 10 · Sleep 6h 14m</span>
+              <div class="disclaimer-box" style="margin-top:14px;">
+                <b>Privacy Guarantee:</b> Raw personal journal entries never leave your browser sandbox. The AI
+                communicates purely with abstracted mathematical factors.
               </div>
             </div>
 
-            <div class="disclaimer-box" style="margin-top:14px;">
-              <b>Privacy Guarantee:</b> Raw personal journal entries never leave your browser sandbox. The AI communicates purely with abstracted mathematical factors.
-            </div>
           </div>
 
         </div>
 
-      </div>
-
-    </main>
+      </main>
+    </div>
   </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase.js"></script>
-<script src="js/main.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const chatBox = document.getElementById('aiChatBox');
-  const input = document.getElementById('aiInput');
-  const sendBtn = document.getElementById('aiSendBtn');
-  if (!chatBox || !input || !sendBtn) return;
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const chatBox = document.getElementById('aiChatBox');
+      const input = document.getElementById('aiInput');
+      const sendBtn = document.getElementById('aiSendBtn');
+      if (!chatBox || !input || !sendBtn) return;
 
-  async function persistMessage(sender, text) {
-    const user = window.AIRGUARD_FIREBASE?.currentUser?.();
-    if (!user || localStorage.getItem('airguard_demo') === 'true') return;
-    try { await window.AIRGUARD_FIREBASE.saveConversation(user, { sender, text, page: 'ai', createdAt: new Date().toISOString() }); }
-    catch (error) { console.warn('AI conversation sync pending', error); }
-  }
+      async function persistMessage(sender, text) {
+        const user = window.AIRGUARD_FIREBASE?.currentUser?.();
+        if (!user || localStorage.getItem('airguard_demo') === 'true') return;
+        try { await window.AIRGUARD_FIREBASE.saveConversation(user, { sender, text, page: 'ai', createdAt: new Date().toISOString() }); }
+        catch (error) { console.warn('AI conversation sync pending', error); }
+      }
 
-  function renderSavedConversation(data) {
-    const messages = data?.conversations?.filter(item => item.page === 'ai') || [];
-    messages.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
-    messages.forEach(item => appendMessage(item.sender, item.text, false));
-  }
+      function renderSavedConversation(data) {
+        const messages = data?.conversations?.filter(item => item.page === 'ai') || [];
+        messages.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+        messages.forEach(item => appendMessage(item.sender, item.text, false));
+      }
 
-  function getAIReplyFallback(text) {
-    const q = text.toLowerCase();
-    if (q.includes('flag') || q.includes('why')) {
-      return "Good question. I’m comparing today’s environmental readings with the personal check-ins you’ve saved. I’ll call out the strongest differences I can actually support, and I’ll keep the explanation observational rather than diagnostic.";
-    }
-    if (q.includes('comfort') || q.includes('affect') || q.includes('most')) {
-      return "Let’s look at your comfort entries alongside temperature, humidity, AQI, sleep, and activity context. The most useful answer will come from repeated combinations in your own records—not from a generic population assumption.";
-    }
-    if (q.includes('yesterday') || q.includes('compare')) {
-      return "I can compare today with your recent entries using the environmental snapshots and check-ins you’ve saved. If a value is missing, I’ll say so instead of filling it in.";
-    }
-    if (q.includes('run') || q.includes('workout') || q.includes('time') || q.includes('schedule')) {
-      return "I can help you compare the available activity windows. I’ll use the live temperature, humidity, and AQI forecast, then relate the choice to your saved activity context.";
-    }
-    return "I’m here with you. Ask me about today’s conditions, a check-in, sleep, comfort, energy, or an activity window, and I’ll explain what your saved data can support.";
-  }
+      function getAIReplyFallback(text) {
+        const q = text.toLowerCase();
+        if (q.includes('flag') || q.includes('why')) {
+          return "Good question. I’m comparing today’s environmental readings with the personal check-ins you’ve saved. I’ll call out the strongest differences I can actually support, and I’ll keep the explanation observational rather than diagnostic.";
+        }
+        if (q.includes('comfort') || q.includes('affect') || q.includes('most')) {
+          return "Let’s look at your comfort entries alongside temperature, humidity, AQI, sleep, and activity context. The most useful answer will come from repeated combinations in your own records—not from a generic population assumption.";
+        }
+        if (q.includes('yesterday') || q.includes('compare')) {
+          return "I can compare today with your recent entries using the environmental snapshots and check-ins you’ve saved. If a value is missing, I’ll say so instead of filling it in.";
+        }
+        if (q.includes('run') || q.includes('workout') || q.includes('time') || q.includes('schedule')) {
+          return "I can help you compare the available activity windows. I’ll use the live temperature, humidity, and AQI forecast, then relate the choice to your saved activity context.";
+        }
+        return "I’m here with you. Ask me about today’s conditions, a check-in, sleep, comfort, energy, or an activity window, and I’ll explain what your saved data can support.";
+      }
 
-  function resourceForQuestion(text) {
-    const q = text.toLowerCase();
-    const asksToLearn = /read|article|learn|watch|video|explain|source|more about/.test(q);
-    if (!asksToLearn && !/aqi|air quality|pollution|heat|hot|humidity/.test(q)) return null;
-    if (/heat|hot|temperature|humidity/.test(q)) return {
-      label: 'Read this: heat and your health',
-      description: 'Official CDC guidance on staying cool, hydrated, and planning outdoor activity in hot conditions.',
-      url: 'https://www.cdc.gov/extreme-heat/prevention/index.html'
-    };
-    if (/aqi|air quality|pollution/.test(q)) return {
-      label: 'Read this: understanding the Air Quality Index',
-      description: 'An official EPA guide to using AQI information when planning daily activities.',
-      url: 'https://www.epa.gov/wildfire-smoke-course/communicating-air-quality-conditions-air-quality-index'
-    };
-    return {
-      label: 'Read this: ambient air pollution and health',
-      description: 'A WHO overview of air pollution and health. AIRGUARD is not a medical diagnostic tool.',
-      url: 'https://www.who.int/en/news-room/fact-sheets/detail/ambient-%28outdoor%29-air-quality-and-health'
-    };
-  }
+      function resourceForQuestion(text) {
+        const q = text.toLowerCase();
+        const asksToLearn = /read|article|learn|watch|video|explain|source|more about/.test(q);
+        if (!asksToLearn && !/aqi|air quality|pollution|heat|hot|humidity/.test(q)) return null;
+        if (/heat|hot|temperature|humidity/.test(q)) return {
+          label: 'Read this: heat and your health',
+          description: 'Official CDC guidance on staying cool, hydrated, and planning outdoor activity in hot conditions.',
+          url: 'https://www.cdc.gov/extreme-heat/prevention/index.html'
+        };
+        if (/aqi|air quality|pollution/.test(q)) return {
+          label: 'Read this: understanding the Air Quality Index',
+          description: 'An official EPA guide to using AQI information when planning daily activities.',
+          url: 'https://www.epa.gov/wildfire-smoke-course/communicating-air-quality-conditions-air-quality-index'
+        };
+        return {
+          label: 'Read this: ambient air pollution and health',
+          description: 'A WHO overview of air pollution and health. AIRGUARD is not a medical diagnostic tool.',
+          url: 'https://www.who.int/en/news-room/fact-sheets/detail/ambient-%28outdoor%29-air-quality-and-health'
+        };
+      }
 
-  function appendResource(message, resource) {
-    if (!resource || !message) return;
-    const card = document.createElement('div');
-    card.style.cssText = 'margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--app-bg);border:1px solid var(--border-soft);font-size:12px;';
-    card.innerHTML = `<b style="display:block;margin-bottom:3px;">${resource.label}</b><span style="display:block;color:var(--text-secondary);margin-bottom:7px;">${resource.description}</span><a href="${resource.url}" target="_blank" rel="noopener noreferrer" style="font-weight:700;color:var(--purple-fg);">Open resource →</a>`;
-    message.querySelector('.ai-bubble')?.appendChild(card);
-  }
+      function appendResource(message, resource) {
+        if (!resource || !message) return;
+        const card = document.createElement('div');
+        card.style.cssText = 'margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--app-bg);border:1px solid var(--border-soft);font-size:12px;';
+        card.innerHTML = `<b style="display:block;margin-bottom:3px;">${resource.label}</b><span style="display:block;color:var(--text-secondary);margin-bottom:7px;">${resource.description}</span><a href="${resource.url}" target="_blank" rel="noopener noreferrer" style="font-weight:700;color:var(--purple-fg);">Open resource →</a>`;
+        message.querySelector('.ai-bubble')?.appendChild(card);
+      }
 
-  async function getAIReply(text) {
-    const data = window.AIRGUARD.getUserData?.() || {};
-    const days = window.AIRGUARD.daysData || [];
-    const latest = days[days.length - 1] || {};
-    const checkins = data.checkins || [];
-    const average = key => {
-      const values = checkins.map(item => Number(item[key])).filter(Number.isFinite);
-      return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
-    };
-    const averageEnvironment = key => {
-      const values = checkins.map(item => Number(item.environment?.[key])).filter(Number.isFinite);
-      return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
-    };
-    try {
-      const base = window.AIRGUARD_ENV_API || 'http://127.0.0.1:5001';
-      const response = await fetch(`${base}/ai/chat`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: text,
-          current_conditions: { temperature_c: latest.temp, humidity_pct: latest.humidity, aqi: latest.aqi },
-          baseline: { temp: averageEnvironment('temperature_c'), humidity: averageEnvironment('humidity_pct'), aqi: averageEnvironment('aqi'), energy: average('energy'), comfort: average('comfort') },
-          patterns: [], activity_context: {}
-        })
-      });
-      if (response.ok) { const result = await response.json(); if (result.reply) return result.reply; }
-    } catch (error) { console.warn('AIRGUARD AI service unavailable; using local response', error); }
-    return getAIReplyFallback(text);
-  }
+      async function getAIReply(text) {
+        const data = window.AIRGUARD.getUserData?.() || {};
+        const days = window.AIRGUARD.daysData || [];
+        const latest = days[days.length - 1] || {};
+        const checkins = data.checkins || [];
+        const average = key => {
+          const values = checkins.map(item => Number(item[key])).filter(Number.isFinite);
+          return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+        };
+        const averageEnvironment = key => {
+          const values = checkins.map(item => Number(item.environment?.[key])).filter(Number.isFinite);
+          return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+        };
+        try {
+          const base = window.AIRGUARD_ENV_API || 'http://127.0.0.1:5001';
+          const response = await fetch(`${base}/ai/chat`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              question: text,
+              current_conditions: { temperature_c: latest.temp, humidity_pct: latest.humidity, aqi: latest.aqi },
+              baseline: { temp: averageEnvironment('temperature_c'), humidity: averageEnvironment('humidity_pct'), aqi: averageEnvironment('aqi'), energy: average('energy'), comfort: average('comfort') },
+              patterns: [], activity_context: {}
+            })
+          });
+          if (response.ok) { const result = await response.json(); if (result.reply) return result.reply; }
+        } catch (error) { console.warn('AIRGUARD AI service unavailable; using local response', error); }
+        return getAIReplyFallback(text);
+      }
 
-  function appendMessage(sender, htmlText, persist = true) {
-    const msg = document.createElement('div');
-    msg.className = `ai-msg ${sender === 'user' ? 'user' : ''}`;
-    msg.innerHTML = sender === 'user' ? `
-      <div class="ai-bubble"><p>${htmlText}</p></div>
+      function appendMessage(sender, htmlText, persist = true) {
+        const msg = document.createElement('div');
+        msg.className = `ai-msg ${sender === 'user' ? 'user' : ''}`;
+        const safeText = sender === 'user' ? window.AIRGUARD.escapeHtml(htmlText) : window.AIRGUARD.sanitizeAIHtml(htmlText);
+        msg.innerHTML = sender === 'user' ? `
+      <div class="ai-bubble"><p>${safeText}</p></div>
       <div class="ai-avatar user">You</div>
     ` : `
       <div class="ai-avatar bot">
@@ -269,61 +334,62 @@ document.addEventListener('DOMContentLoaded', () => {
       </div>
       <div class="ai-bubble">
         <b>AIRGUARD AI</b>
-        <p>${htmlText}</p>
+        <p>${safeText}</p>
       </div>
     `;
-    chatBox.appendChild(msg);
-    chatBox.scrollTop = chatBox.scrollHeight;
-    if (persist) persistMessage(sender, htmlText);
-  }
+        chatBox.appendChild(msg);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        if (persist) persistMessage(sender, htmlText); // keep saving the raw text — sanitize only at render time
+      }
 
-  async function handleSend() {
-    const val = input.value.trim();
-    if (!val) return;
-    appendMessage('user', val);
-    input.value = '';
+      async function handleSend() {
+        const val = input.value.trim();
+        if (!val) return;
+        appendMessage('user', val);
+        input.value = '';
 
-    const pendingMessage = document.createElement('div');
-    pendingMessage.className = 'ai-msg';
-    pendingMessage.innerHTML = '<div class="ai-avatar bot">✦</div><div class="ai-bubble"><b>AIRGUARD AI</b><p>AIRGUARD is thinking…</p></div>';
-    chatBox.appendChild(pendingMessage);
-    chatBox.scrollTop = chatBox.scrollHeight;
-    try {
-      const reply = await getAIReply(val);
-      const pending = pendingMessage.querySelector('p');
-      if (pending) pending.innerHTML = reply;
-      appendResource(pendingMessage, resourceForQuestion(val));
-      persistMessage('bot', reply);
-    } catch (error) {
-      const pending = pendingMessage.querySelector('p');
-      if (pending) pending.textContent = 'I could not complete that request. Please try again.';
-      console.error('AIRGUARD chat error', error);
-    }
-  }
+        const pendingMessage = document.createElement('div');
+        pendingMessage.className = 'ai-msg';
+        pendingMessage.innerHTML = '<div class="ai-avatar bot">✦</div><div class="ai-bubble"><b>AIRGUARD AI</b><p>AIRGUARD is thinking…</p></div>';
+        chatBox.appendChild(pendingMessage);
+        chatBox.scrollTop = chatBox.scrollHeight;
+        try {
+          const reply = await getAIReply(val);
+          const pending = pendingMessage.querySelector('p');
+          if (pending) pending.innerHTML = window.AIRGUARD.sanitizeAIHtml(reply);
+          appendResource(pendingMessage, resourceForQuestion(val));
+          persistMessage('bot', reply);
+        } catch (error) {
+          const pending = pendingMessage.querySelector('p');
+          if (pending) pending.textContent = 'I could not complete that request. Please try again.';
+          console.error('AIRGUARD chat error', error);
+        }
+      }
 
-  sendBtn.addEventListener('click', handleSend);
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleSend();
-  });
+      sendBtn.addEventListener('click', handleSend);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleSend();
+      });
 
-  document.querySelectorAll('.ai-prompt-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      input.value = chip.dataset.ask;
-      handleSend();
+      document.querySelectorAll('.ai-prompt-chip').forEach(chip => {
+        chip.addEventListener('click', () => {
+          input.value = chip.dataset.ask;
+          handleSend();
+        });
+      });
+      window.addEventListener('airguard-data-ready', event => {
+        if (!chatBox || chatBox.dataset.historyLoaded) return;
+        chatBox.dataset.historyLoaded = 'true';
+        renderSavedConversation(event.detail);
+      });
+      window.AIRGUARD.getUserDataReady?.().then(data => {
+        if (!chatBox.dataset.historyLoaded) {
+          chatBox.dataset.historyLoaded = 'true';
+          renderSavedConversation(data);
+        }
+      });
     });
-  });
-  window.addEventListener('airguard-data-ready', event => {
-    if (!chatBox || chatBox.dataset.historyLoaded) return;
-    chatBox.dataset.historyLoaded = 'true';
-    renderSavedConversation(event.detail);
-  });
-  window.AIRGUARD.getUserDataReady?.().then(data => {
-    if (!chatBox.dataset.historyLoaded) {
-      chatBox.dataset.historyLoaded = 'true';
-      renderSavedConversation(data);
-    }
-  });
-});
-</script>
+  </script>
 </body>
+
 </html>
