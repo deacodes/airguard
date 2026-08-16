@@ -328,12 +328,12 @@
     saveLocation,
     reverseGeocode,
     fetchCurrentConditions,
-    fetchHourlyForecast,
     loadCurrentEnvironment
   };
 
   window.AIRGUARD.ready = window.AIRGUARD_FIREBASE?.ready || Promise.resolve(null);
   window.AIRGUARD.getUserData = () => window.AIRGUARD_FIREBASE?.getCachedData?.() || null;
+  window.AIRGUARD.getUserDataReady = () => window.AIRGUARD_FIREBASE?.getUserDataReady?.() || Promise.resolve(null);
   window.AIRGUARD.saveCheckin = async (checkin) => {
     const user = window.AIRGUARD_FIREBASE?.currentUser?.();
     if (user) return window.AIRGUARD_FIREBASE.saveCheckin(user, checkin);
@@ -341,7 +341,7 @@
     throw new Error("Please sign in before saving personal data.");
   };
   window.AIRGUARD.saveActivity = async (activity) => {
-    const user = window.AIRGUARD_FIREBASE?.currentUser?.() || window.AIRGUARD_FIREBASE?.getCachedData?.();
+    const user = window.AIRGUARD_FIREBASE?.currentUser?.();
     if (!user) throw new Error('Please sign in before saving activities.');
     return window.AIRGUARD_FIREBASE.saveActivity(user, activity);
   };
@@ -481,7 +481,6 @@
     const aiChat = document.getElementById('aiChatBox');
     if (aiChat) aiChat.innerHTML = '<div class="ai-msg"><div class="ai-avatar bot">✦</div><div class="ai-bubble"><b>AIRGUARD AI</b><p>Hello — I’m AIRGUARD AI. Add personal check-ins and environmental context, and I’ll be ready to help you explore them.</p></div></div>';
     ['dispTemp', 'dispHumidity', 'dispAqi'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
-    ['dispTempDelta', 'dispHumDelta', 'dispAqiDelta'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = 'Not available yet'; });
     ['recentPatternChart', 'env7DayChart', 'weekEnvChart'].forEach(id => {
       const canvas = document.getElementById(id);
       if (!canvas || daysData.length) return;
@@ -699,34 +698,6 @@
     return { aqi: air.us_aqi, pm2_5: air.pm2_5, pm10: air.pm10, temperature_c: weather.temperature_2m, feels_like_c: weather.apparent_temperature, humidity_pct: weather.relative_humidity_2m, uv_index: weather.uv_index, pollen_level: pollen < 20 ? 'Low' : pollen < 50 ? 'Moderate' : 'High', timestamp: weather.time };
   }
 
-  // fetch hourly forecast (today + tomorrow) for the activity planner's
-  // time-based recommendations. No backend proxy exists for this yet, so
-  // it always talks to Open-Meteo directly — mirrors the fallback path
-  // already used by fetchCurrentConditions/fetchEnvironmentHistory above.
-  async function fetchHourlyForecast(lat, lng) {
-    const [weatherResponse, airResponse] = await Promise.all([
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,relative_humidity_2m&forecast_days=2&timezone=auto`),
-      fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lng}&hourly=us_aqi&forecast_days=2&timezone=auto`)
-    ]);
-    if (!weatherResponse.ok || !airResponse.ok) throw new Error('Hourly forecast is unavailable.');
-    const weather = await weatherResponse.json();
-    const air = await airResponse.json();
-
-    const times = weather.hourly?.time || [];
-    const temps = weather.hourly?.temperature_2m || [];
-    const hums = weather.hourly?.relative_humidity_2m || [];
-
-    const aqiByTime = {};
-    (air.hourly?.time || []).forEach((t, i) => { aqiByTime[t] = air.hourly.us_aqi?.[i] ?? null; });
-
-    return times.map((t, i) => ({
-      time: t, // ISO-ish local string from Open-Meteo, e.g. "2026-08-15T14:00"
-      temp: temps[i] ?? null,
-      humidity: hums[i] ?? null,
-      aqi: aqiByTime[t] ?? null
-    }));
-  }
-
   // load the current location 
   async function loadCurrentEnvironment() {
     const location = getSavedLocation();
@@ -774,11 +745,8 @@
       }
       const envTemp = document.getElementById('envTemperatureValue');
       if (envTemp) envTemp.textContent = `${roundedTemp}°C`;
-      // Note: #dispTemp (activity.html) is intentionally NOT touched here.
-      // It belongs to the Activity Planner's time-based selection and is
-      // owned entirely by that page's own script — this widget reflects
-      // "right now," which is a different concept from "conditions at the
-      // planned time," and writing to it here would race/overwrite that.
+      const activityTemp = document.getElementById('dispTemp');
+      if (activityTemp) activityTemp.textContent = `${roundedTemp}°C`;
       const envFeels = document.getElementById('envFeelsLikeCaption');
       if (envFeels && conditions.feels_like_c != null) envFeels.textContent = `Feels like ${Math.round(conditions.feels_like_c)}°C`;
 
@@ -817,8 +785,8 @@
       }
       const envAqi = document.getElementById('envAqiValue');
       if (envAqi) envAqi.textContent = aqi;
-      // #dispAqi (activity.html) is intentionally not touched — see note
-      // in updateTemperature() above.
+      const activityAqi = document.getElementById('dispAqi');
+      if (activityAqi) activityAqi.textContent = aqi;
       const envPm25 = document.getElementById('envPm25Value');
       if (envPm25 && conditions.pm2_5 != null) envPm25.innerHTML = `${Math.round(conditions.pm2_5)} <span style="font-size:14px;font-weight:600">μg/m³</span>`;
 
@@ -862,8 +830,8 @@
       }
       const envHumidity = document.getElementById('envHumidityValue');
       if (envHumidity) envHumidity.textContent = `${roundedHumidity}%`;
-      // #dispHumidity (activity.html) is intentionally not touched — see
-      // note in updateTemperature() above.
+      const activityHumidity = document.getElementById('dispHumidity');
+      if (activityHumidity) activityHumidity.textContent = `${roundedHumidity}%`;
 
       // Humidity comparison
       const comparisonHumidity =

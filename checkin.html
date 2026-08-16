@@ -176,6 +176,7 @@
                 Save Check-in ✓
               </button>
             </div>
+            <div id="checkinSaveStatus" role="status" aria-live="polite" style="margin-top:10px; min-height:18px; text-align:center; font-size:12px; color:var(--text-secondary);"></div>
           </div>
 
           <!-- CONFIRMATION SUMMARY -->
@@ -240,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const saveBtn = document.getElementById('saveCalmCheckinBtn');
   const successBox = document.getElementById('calmCheckinSuccess');
+  const saveStatus = document.getElementById('checkinSaveStatus');
 
   if (saveBtn) {
     saveBtn.addEventListener('click', async () => {
@@ -258,16 +260,25 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       saveBtn.disabled = true;
+      if (saveStatus) { saveStatus.textContent = 'Saving to your secure Firebase account…'; saveStatus.style.color = 'var(--text-secondary)'; }
       try {
         const location = window.AIRGUARD.getSavedLocation();
-        record.environment = await window.AIRGUARD.fetchCurrentConditions(location.lat, location.lng);
-        await window.AIRGUARD.saveCheckin(record);
+        try {
+          record.environment = await window.AIRGUARD.fetchCurrentConditions(location.lat, location.lng);
+        } catch (environmentError) {
+          console.warn('Environment lookup unavailable; saving check-in without environment data', environmentError);
+          record.environment = null;
+        }
+        const saved = await window.AIRGUARD.saveCheckin(record);
+        if (!saved?.id || String(saved.id).startsWith('local-')) throw new Error('Firebase did not return a saved check-in ID.');
       } catch (error) {
         saveBtn.disabled = false;
+        if (saveStatus) { saveStatus.textContent = `Could not save: ${error.message || 'Unknown Firebase error'}`; saveStatus.style.color = 'var(--red-fg)'; }
         window.AIRGUARD.showToast(error.message || 'Could not save check-in');
         return;
       }
       saveBtn.disabled = false;
+      if (saveStatus) { saveStatus.textContent = 'Saved to Firebase ✓'; saveStatus.style.color = 'var(--green-fg)'; }
 
       stepContents.forEach(c => c.style.display = 'none');
       if (successBox) successBox.style.display = 'flex';

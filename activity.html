@@ -176,6 +176,7 @@
         <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
           <button class="btn btn-outline" id="actChangeTimeBtn">Switch to 6:30 PM window</button>
           <button class="btn btn-dark" id="actSavePlanBtn">Start Activity &amp; Save</button>
+          <div id="activitySaveStatus" role="status" aria-live="polite" style="margin-top:8px; min-height:18px; flex-basis:100%; font-size:12px; color:var(--text-secondary);"></div>
         </div>
       </div>
 
@@ -651,15 +652,22 @@ function pickCandidateHours(hours) {
   // Step 7: save the real computed context alongside the activity record.
   // ---------------------------------------------------------------------
   const saveBtn = document.getElementById('actSavePlanBtn');
+  const saveStatus = document.getElementById('activitySaveStatus');
   if (saveBtn) {
     saveBtn.addEventListener('click', async () => {
       saveBtn.disabled = true;
+      if (saveStatus) { saveStatus.textContent = 'Saving activity to Firebase…'; saveStatus.style.color = 'var(--text-secondary)'; }
       try {
-        const environment = await window.AIRGUARD.fetchCurrentConditions(location.lat, location.lng);
+        let environment = null;
+        try {
+          environment = await window.AIRGUARD.fetchCurrentConditions(location.lat, location.lng);
+        } catch (environmentError) {
+          console.warn('Environment lookup unavailable; saving activity without environment data', environmentError);
+        }
         const activeCard = timeCardsContainer.querySelector('.time-slot-card.active');
         const durationMinutes = parseDurationMinutes(durationInput.value);
         const best = bestOfCandidates(durationMinutes);
-        await window.AIRGUARD.saveActivity({
+        const saved = await window.AIRGUARD.saveActivity({
           activity: document.getElementById('actActivity').value,
           duration: durationInput.value,
           plannedTime: document.getElementById('actTime').value,
@@ -671,9 +679,14 @@ function pickCandidateHours(hours) {
             bestWindow: best ? formatHourLabel(best.time) : null
           } : null
         });
+        if (!saved?.id || String(saved.id).startsWith('local-')) throw new Error('Firebase did not return a saved activity ID.');
         renderPastActivities(window.AIRGUARD.getUserData?.());
+        if (saveStatus) { saveStatus.textContent = 'Activity saved to Firebase ✓'; saveStatus.style.color = 'var(--green-fg)'; }
         window.AIRGUARD.showToast('Activity saved to your personal history');
-      } catch (error) { window.AIRGUARD.showToast(error.message || 'Could not save activity'); }
+      } catch (error) {
+        if (saveStatus) { saveStatus.textContent = `Could not save: ${error.message || 'Unknown Firebase error'}`; saveStatus.style.color = 'var(--red-fg)'; }
+        window.AIRGUARD.showToast(error.message || 'Could not save activity');
+      }
       finally { saveBtn.disabled = false; }
     });
   }

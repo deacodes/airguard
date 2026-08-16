@@ -215,8 +215,8 @@
             if (authMode === 'signup') authenticatedUser = await firebase.signUp(email, password);
             else {
               authenticatedUser = await firebase.signIn(email, password);
-              const existing = await firebase.ready;
-              if (existing?.profile?.onboardingComplete) { window.location.href = 'dashboard.html'; return; }
+              const existing = await firebase.getUserDataReady();
+              if (existing?.profile?.onboardingComplete === true) { window.location.href = 'dashboard.html'; return; }
             }
             firebase.clearDemoMode();
             renderStep(1);
@@ -232,12 +232,11 @@
           nextBtn.disabled = true;
           try {
             const profile = { name: document.getElementById('onboardName').value.trim(), goal: selected('goal')[0], units: selected('units')[0], focus: selected('focus'), location, onboardingComplete: true, onboardedAt: new Date().toISOString() };
-            await Promise.race([
-              firebase.saveProfile(authenticatedUser, profile),
-              new Promise(resolve => setTimeout(resolve, 2000))
-            ]);
+            await firebase.saveProfile(authenticatedUser, profile);
           } catch (error) {
             console.error('Firestore profile save failed; continuing with cached profile', error);
+            alert(error.message || 'Firebase could not save your onboarding profile. Please check your connection and try again.');
+            return;
           }
           localStorage.setItem('airguard_onboard_seen', 'true');
           nextBtn.disabled = false;

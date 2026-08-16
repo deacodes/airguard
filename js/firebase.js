@@ -1,5 +1,5 @@
-/* AIRGUARD Firebase bootstrap. Uses the browser-compatible SDK build so this
-   works when the app is served as plain static HTML. */
+/* AIRGUARD Firebase bootstrap. Personal records are scoped to the authenticated user.
+   localStorage is only an offline cache; Firestore is the source of truth. */
 (function () {
   window.AIRGUARD_FIREBASE_SCRIPT_LOADED = true;
   if (typeof firebase === "undefined") {
@@ -20,92 +20,131 @@
   try { firebase.analytics(); } catch (error) { console.info("Analytics unavailable", error); }
   const auth = firebase.auth();
   const db = firebase.firestore();
-  const USER_CACHE = "airguard_user_data";
-  const readCache = () => { try { return JSON.parse(localStorage.getItem(USER_CACHE) || "null"); } catch { return null; } };
-  const writeCache = data => localStorage.setItem(USER_CACHE, JSON.stringify(data));
+  try { db.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch (error) {}
+
+  const CACHE_PREFIX = "airguard_user_data_";
+  const legacyCacheKey = "airguard_user_data";
+  const cacheKey = uid => `${CACHE_PREFIX}${uid}`;
+  const readCache = uid => {
+    try { return JSON.parse(localStorage.getItem(uid ? cacheKey(uid) : legacyCacheKey) || "null"); }
+    catch { return null; }
+  };
+  const writeCache = data => {
+    if (!data?.uid) return;
+    localStorage.setItem(cacheKey(data.uid), JSON.stringify(data));
+    localStorage.setItem(legacyCacheKey, JSON.stringify(data));
+  };
+  const emptyData = user => ({ uid: user.uid, email: user.email || "", profile: {}, checkins: [], activities: [], conversations: [] });
+  const asMillis = value => value?.toMillis ? value.toMillis() : Date.parse(value || 0) || 0;
+  const sortNewest = (a, b) => asMillis(b.createdAt || b.timestamp || b.updatedAt) - asMillis(a.createdAt || a.timestamp || a.updatedAt);
+
+  async function getCollection(path) {
+    try {
+      const snap = await db.collection(path).get();
+      return snap.docs.map(item => ({ id: item.id, ...item.data() })).sort(sortNewest);
+    } catch (error) {
+      console.warn(`Could not load ${path}; using cached records`, error);
+      return null;
+    }
+  }
 
   async function loadUserData(user) {
-    const profileSnap = await db.doc(`users/${user.uid}`).get();
-    const profile = profileSnap.exists ? profileSnap.data() : { email: user.email };
-    const checkins = await db.collection(`users/${user.uid}/checkins`).orderBy("createdAt", "desc").get();
-    const activities = await db.collection(`users/${user.uid}/activities`).orderBy("createdAt", "desc").get();
+    const base = readCache(user.uid) || emptyData(user);
+    let profile = base.profile || {};
+    try {
+      const profileSnap = await db.doc(`users/${user.uid}`).get();
+      if (profileSnap.exists) profile = { ...profile, ...profileSnap.data() };
+    } catch (error) { console.warn("Could not load AIRGUARD profile; using cached profile", error); }
+    const [checkins, activities, conversations] = await Promise.all([
+      getCollection(`users/${user.uid}/checkins`),
+      getCollection(`users/${user.uid}/activities`),
+      getCollection(`users/${user.uid}/conversations`)
+    ]);
     const data = {
-      uid: user.uid, email: user.email, profile,
-      checkins: checkins.docs.map(item => ({ id: item.id, ...item.data() })),
-      activities: activities.docs.map(item => ({ id: item.id, ...item.data() }))
+      ...base, uid: user.uid, email: user.email || base.email, profile,
+      checkins: checkins || base.checkins || [], activities: activities || base.activities || [],
+      conversations: conversations || base.conversations || []
     };
-    if (profile.location?.lat && profile.location?.lng) localStorage.setItem("airguard_location", JSON.stringify(profile.location));
+    if (profile.location?.lat != null && profile.location?.lng != null) localStorage.setItem("airguard_location", JSON.stringify(profile.location));
     writeCache(data);
     window.dispatchEvent(new CustomEvent("airguard-data-ready", { detail: data }));
     return data;
   }
 
-  async function saveProfile(user, profile) {
-    const payload = { ...profile, email: user.email, updatedAt: new Date().toISOString() };
-    const cached = readCache() || { uid: user.uid, email: user.email, profile: {}, checkins: [], activities: [] };
-    writeCache({ ...cached, profile: { ...cached.profile, ...payload } });
-    await db.doc(`users/${user.uid}`).set(payload, { merge: true });
+  function updateCached(user, update) {
+    const cached = readCache(user.uid) || emptyData(user);
+    const next = { ...cached, ...update, uid: user.uid, email: user.email || cached.email };
+    writeCache(next);
+    window.dispatchEvent(new CustomEvent("airguard-data-ready", { detail: next }));
+    return next;
   }
 
-  async function saveCheckin(user, checkin) {
-    const payload = { ...checkin, createdAt: new Date().toISOString() };
-    const cached = readCache() || { uid: user.uid, email: user.email, profile: {}, checkins: [], activities: [] };
-    const localId = `local-${Date.now()}`;
-    cached.checkins = [{ id: localId, ...payload }, ...(cached.checkins || [])];
-    writeCache(cached);
-    try {
-      const ref = await db.collection(`users/${user.uid}/checkins`).add(payload);
-      cached.checkins[0].id = ref.id;
-      writeCache(cached);
-    } catch (error) {
-      console.warn("Check-in saved locally; Firestore sync pending", error);
+  async function saveProfile(user, profile) {
+    const payload = { ...profile, email: user.email, updatedAt: new Date().toISOString() };
+    const cached = readCache(user.uid) || emptyData(user);
+    updateCached(user, { profile: { ...cached.profile, ...payload } });
+    await db.doc(`users/${user.uid}`).set(payload, { merge: true });
+    const saved = await db.doc(`users/${user.uid}`).get({ source: "server" });
+    if (!saved.exists || saved.data().onboardingComplete !== true && payload.onboardingComplete === true) {
+      throw new Error("Firebase did not confirm the onboarding profile save. Check your Firebase connection and rules.");
     }
     return payload;
   }
 
-  async function saveActivity(user, activity) {
-    const payload = { ...activity, createdAt: new Date().toISOString() };
-    const cached = readCache() || { uid: user.uid, email: user.email, profile: {}, checkins: [], activities: [] };
-    const localId = `local-activity-${Date.now()}`;
-    cached.activities = [{ id: localId, ...payload }, ...(cached.activities || [])];
-    writeCache(cached);
-    try {
-      const ref = await db.collection(`users/${user.uid}/activities`).add(payload);
-      cached.activities[0].id = ref.id;
-      writeCache(cached);
-    } catch (error) { console.warn("Activity saved locally; Firestore sync pending", error); }
-    return payload;
+  async function migrateLegacyCache(user) {
+    const existing = readCache(user.uid);
+    if (existing) return existing;
+    let legacy = readCache();
+    if (!legacy || legacy.uid !== user.uid) return null;
+    const migrated = { ...emptyData(user), ...legacy, uid: user.uid, email: user.email || legacy.email };
+    writeCache(migrated);
+    for (const record of migrated.checkins || []) await saveRecord(user, "checkins", record);
+    for (const record of migrated.activities || []) await saveRecord(user, "activities", record);
+    for (const record of migrated.conversations || []) await saveRecord(user, "conversations", record);
+    return migrated;
   }
+
+  async function saveRecord(user, collection, record) {
+    const payload = { ...record, createdAt: record.createdAt || new Date().toISOString() };
+    const cached = readCache(user.uid) || emptyData(user);
+    const localId = `local-${collection}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const key = collection === "checkins" ? "checkins" : collection === "activities" ? "activities" : "conversations";
+    updateCached(user, { [key]: [{ id: localId, ...payload }, ...(cached[key] || [])] });
+    const ref = await db.collection(`users/${user.uid}/${collection}`).add(payload);
+    const fresh = readCache(user.uid) || emptyData(user);
+    fresh[key] = (fresh[key] || []).map(item => item.id === localId ? { ...item, id: ref.id } : item);
+    writeCache(fresh);
+    return { id: ref.id, ...payload };
+  }
+  async function saveCheckin(user, checkin) { return saveRecord(user, "checkins", checkin); }
+  async function saveActivity(user, activity) { return saveRecord(user, "activities", activity); }
+  async function saveConversation(user, message) { return saveRecord(user, "conversations", message); }
 
   let resolveReady;
   const ready = new Promise(resolve => { resolveReady = resolve; });
   let readyResolved = false;
   auth.onAuthStateChanged(async user => {
-    if (!user) {
-      if (!readyResolved) { readyResolved = true; resolveReady(null); }
-      return;
-    }
-    // Never block authentication/onboarding on Firestore availability.
-    const cached = readCache() || { uid: user.uid, email: user.email, profile: {}, checkins: [], activities: [] };
+    if (!user) { if (!readyResolved) { readyResolved = true; resolveReady(null); } return; }
+    const cached = readCache(user.uid) || emptyData(user);
     if (!readyResolved) { readyResolved = true; resolveReady(cached); }
-    try { await loadUserData(user); }
-    catch (error) { console.warn("Could not sync AIRGUARD data; using local cache", error); }
+    try { await loadUserData(user); } catch (error) { console.warn("Could not sync AIRGUARD data; using local cache", error); }
   });
 
   window.AIRGUARD_FIREBASE = {
-    auth, db, ready,
+    app, auth, db, ready,
     currentUser: () => auth.currentUser,
-    getCachedData: readCache,
+    getCachedData: () => auth.currentUser ? readCache(auth.currentUser.uid) : null,
+    getUserDataReady: async () => auth.currentUser ? loadUserData(auth.currentUser) : null,
     signUp: async (email, password) => {
       const result = await auth.createUserWithEmailAndPassword(email, password);
-      const data = { uid: result.user.uid, email, profile: {}, checkins: [], activities: [] };
+      const data = emptyData(result.user);
       writeCache(data);
-      db.doc(`users/${result.user.uid}`).set({ email, onboardingComplete: false, createdAt: new Date().toISOString() }, { merge: true }).catch(error => console.warn("Profile sync pending", error));
+      await db.doc(`users/${result.user.uid}`).set({ email, onboardingComplete: false, createdAt: new Date().toISOString() }, { merge: true });
       return result.user;
     },
     signIn: async (email, password) => (await auth.signInWithEmailAndPassword(email, password)).user,
-    signOut: () => auth.signOut(), saveProfile, saveCheckin, saveActivity,
-    setDemoMode: () => { localStorage.setItem("airguard_demo", "true"); localStorage.removeItem(USER_CACHE); },
+    signOut: () => auth.signOut(), saveProfile, saveCheckin, saveActivity, saveConversation,
+    setDemoMode: () => { localStorage.setItem("airguard_demo", "true"); localStorage.removeItem(legacyCacheKey); },
     clearDemoMode: () => localStorage.removeItem("airguard_demo")
   };
 })();
