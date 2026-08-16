@@ -919,7 +919,7 @@
       const evidence = weeklyPattern.querySelector('a');
       if (evidence) { evidence.textContent = pattern ? 'Inspect evidence →' : 'Evidence needs more data'; if (pattern) evidence.href = `pattern-detail.html?p=${pattern.id}`; }
     }
-    document.getElementById('environmentBaselineCard')?.remove();
+
     // Pattern and weekly summary cards are filled from the signed-in user's
     // records above. Do not replace them with generic placeholder text.
     ['recentPatternChart', 'env7DayChart', 'weekEnvChart'].forEach(id => {

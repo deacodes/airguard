@@ -14,14 +14,39 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <style>
-    #environmentMap { width: 100%; height: 340px; border-radius: 10px; }
-    .environment-map-wrap { position: relative; overflow: hidden; border-radius: 10px; }
-    .map-selection-status {
-      position:absolute; z-index:500; left:12px; right:12px; bottom:12px; padding:10px 12px;
-      background:rgba(255,255,255,.95); border:1px solid var(--border); border-radius:8px;
-      font-size:12px; font-weight:700; box-shadow:0 2px 10px rgba(0,0,0,.08); pointer-events:none;
+    #environmentMap {
+      width: 100%;
+      height: 340px;
+      border-radius: 10px;
     }
-    .map-location-note { font-size:12px; color:var(--text-secondary); margin-top:7px; }
+
+    .environment-map-wrap {
+      position: relative;
+      overflow: hidden;
+      border-radius: 10px;
+    }
+
+    .map-selection-status {
+      position: absolute;
+      z-index: 500;
+      left: 12px;
+      right: 12px;
+      bottom: 12px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, .95);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, .08);
+      pointer-events: none;
+    }
+
+    .map-location-note {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 7px;
+    }
   </style>
 </head>
 
@@ -198,37 +223,38 @@
 
         <!-- COMPARED WITH YOUR USUAL CONDITIONS SECTION -->
         <h2 class="section-heading">Compared with your usual conditions</h2>
-        <div class="card" id="environmentBaselineCard" style="margin-bottom: 24px;">
-          <p class="secondary-text" style="margin-bottom: 16px;">How today's environment in <span id="comparisonLocationLabel">Jaipur, India</span> compares to your
+        <div class="card" id="environmentBaselineCard" style="margin-bottom: 24px; opacity:1; transform:none;">
+          <p class="secondary-text" style="margin-bottom: 16px;">How today's environment in <span
+              id="comparisonLocationLabel">Jaipur, India</span> compares to your
             30-day baseline:</p>
 
           <div class="cmp-row">
             <div class="cmp-row-top">
               <span class="label">AQI (Air Quality Index)</span>
-              <span class="vals" style="color:var(--blue-fg);">+31% above your usual (92)</span>
+              <span class="vals" id="cmpAqiVals" style="color:var(--blue-fg);">Comparing…</span>
             </div>
             <div class="cmp-track" style="height:10px;">
-              <div class="cmp-fill" style="width:65%; background:var(--blue);"></div>
+              <div class="cmp-fill" id="cmpAqiFill" style="width:0%; background:var(--blue);"></div>
             </div>
           </div>
 
           <div class="cmp-row">
             <div class="cmp-row-top">
               <span class="label">Temperature</span>
-              <span class="vals" style="color:var(--blue-fg);">+18% above your usual (28°C)</span>
+              <span class="vals" id="cmpTempVals" style="color:var(--blue-fg);">Comparing…</span>
             </div>
             <div class="cmp-track" style="height:10px;">
-              <div class="cmp-fill" style="width:48%; background:var(--blue);"></div>
+              <div class="cmp-fill" id="cmpTempFill" style="width:0%; background:var(--blue);"></div>
             </div>
           </div>
 
           <div class="cmp-row" style="margin-bottom:0;">
             <div class="cmp-row-top">
               <span class="label">Humidity</span>
-              <span class="vals" style="color:var(--blue-fg);">+23% above your usual (56%)</span>
+              <span class="vals" id="cmpHumidityVals" style="color:var(--blue-fg);">Comparing…</span>
             </div>
             <div class="cmp-track" style="height:10px;">
-              <div class="cmp-fill" style="width:58%; background:var(--blue);"></div>
+              <div class="cmp-fill" id="cmpHumidityFill" style="width:0%; background:var(--blue);"></div>
             </div>
           </div>
         </div>
@@ -269,7 +295,8 @@
         <h3 class="card-heading">Select Location</h3>
         <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
       </div>
-      <p class="body-text" style="color:var(--text-secondary); margin-bottom:16px;">Click anywhere on the map to choose your
+      <p class="body-text" style="color:var(--text-secondary); margin-bottom:16px;">Click anywhere on the map to choose
+        your
         location. AIRGUARD will use the selected coordinates for environmental context.</p>
       <div class="environment-map-wrap">
         <div id="environmentMap" aria-label="Interactive location map"></div>
@@ -283,12 +310,12 @@
     </div>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase.js"></script>
-<script src="js/main.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/main.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -380,6 +407,37 @@
       };
       applyLocationLabel(location);
 
+      // Live "compared with your usual conditions" — current vs 30-day baseline.
+      async function refreshBaselineComparison() {
+        const conditions = await window.AIRGUARD.loadCurrentEnvironment?.();
+        if (!conditions) return;
+        const days = (window.AIRGUARD.daysData || []).slice(-30);
+        const average = key => {
+          const values = days.map(d => Number(d[key])).filter(Number.isFinite);
+          return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+        };
+        updateComparisonRow('cmpAqi', conditions.aqi, average('aqi'), '');
+        updateComparisonRow('cmpTemp', conditions.temperature_c, average('temp'), '°C');
+        updateComparisonRow('cmpHumidity', conditions.humidity_pct, average('humidity'), '%');
+      }
+
+      function updateComparisonRow(prefix, current, baseline, unit) {
+        const valsEl = document.getElementById(`${prefix}Vals`);
+        const fillEl = document.getElementById(`${prefix}Fill`);
+        if (!valsEl || !fillEl) return;
+        if (!Number.isFinite(Number(current)) || !Number.isFinite(Number(baseline)) || baseline === 0) {
+          valsEl.textContent = 'Not enough saved data yet';
+          fillEl.style.width = '0%';
+          return;
+        }
+        const diffPct = Math.round(((current - baseline) / Math.abs(baseline)) * 100);
+        const direction = diffPct >= 0 ? 'above' : 'below';
+        valsEl.textContent = `${diffPct >= 0 ? '+' : ''}${diffPct}% ${direction} your usual (${Math.round(baseline)}${unit})`;
+        fillEl.style.width = `${Math.min(100, Math.max(4, Math.abs(diffPct)))}%`;
+      }
+
+      refreshBaselineComparison();
+
       let environmentMap;
       let environmentMarker;
       let pendingLocation = { ...location };
@@ -441,6 +499,7 @@
         // Refresh this page immediately so the newly selected coordinates are
         // used for both current conditions and the history chart.
         window.AIRGUARD.loadCurrentEnvironment?.();
+        refreshBaselineComparison();
         refreshEnvironmentHistory(Number(document.querySelector('[data-env-range].active')?.dataset.envRange || 7));
         window.AIRGUARD.closeModal('locationModal');
         window.AIRGUARD.showToast(`Switched location to ${saved.label}`);
@@ -459,45 +518,45 @@
         }, 80);
       }
 
-    // Switch the environment history chart between real 7/30/90-day windows.
-    document.querySelectorAll('[data-env-range]').forEach(button => {
-      button.addEventListener('click', () => {
-        document.querySelectorAll('[data-env-range]').forEach(item => item.classList.remove('active'));
-        button.classList.add('active');
-        const range = Number(button.dataset.envRange);
-        const records = environmentHistory.slice(-range);
+      // Switch the environment history chart between real 7/30/90-day windows.
+      document.querySelectorAll('[data-env-range]').forEach(button => {
+        button.addEventListener('click', () => {
+          document.querySelectorAll('[data-env-range]').forEach(item => item.classList.remove('active'));
+          button.classList.add('active');
+          const range = Number(button.dataset.envRange);
+          const records = environmentHistory.slice(-range);
+          const chart = window.Chart?.getChart(document.getElementById('env7DayChart'));
+          if (!chart) return;
+          chart.data.labels = records.map(item => item.dateLabel || item.dayLabel);
+          chart.data.datasets[0].data = records.map(item => item.aqi);
+          chart.data.datasets[1].data = records.map(item => item.temp);
+          chart.data.datasets[2].data = records.map(item => item.humidity);
+          fitEnvironmentAxes(chart, records);
+          chart.update();
+        });
+      });
+      async function refreshEnvironmentHistory(range) {
+        let records;
+        try {
+          const location = window.AIRGUARD.getSavedLocation();
+          records = await window.AIRGUARD.fetchEnvironmentHistory(location.lat, location.lng, range);
+        } catch (error) {
+          console.warn('Could not load environmental history', error);
+          window.AIRGUARD.showToast('Live environmental history could not be loaded. Please try again.');
+          return;
+        }
+        environmentHistory = Array.isArray(records) ? records : [];
         const chart = window.Chart?.getChart(document.getElementById('env7DayChart'));
         if (!chart) return;
-        chart.data.labels = records.map(item => item.dateLabel || item.dayLabel);
-        chart.data.datasets[0].data = records.map(item => item.aqi);
-        chart.data.datasets[1].data = records.map(item => item.temp);
-        chart.data.datasets[2].data = records.map(item => item.humidity);
-        fitEnvironmentAxes(chart, records);
+        const visible = environmentHistory.slice(-range);
+        chart.data.labels = visible.map(item => item.dateLabel || item.dayLabel || item.date || '');
+        chart.data.datasets[0].data = visible.map(item => item.aqi ?? null);
+        chart.data.datasets[1].data = visible.map(item => item.temp ?? null);
+        chart.data.datasets[2].data = visible.map(item => item.humidity ?? null);
+        fitEnvironmentAxes(chart, visible);
         chart.update();
-      });
-    });
-    async function refreshEnvironmentHistory(range) {
-      let records;
-      try {
-        const location = window.AIRGUARD.getSavedLocation();
-        records = await window.AIRGUARD.fetchEnvironmentHistory(location.lat, location.lng, range);
-      } catch (error) {
-        console.warn('Could not load environmental history', error);
-        window.AIRGUARD.showToast('Live environmental history could not be loaded. Please try again.');
-        return;
       }
-      environmentHistory = Array.isArray(records) ? records : [];
-      const chart = window.Chart?.getChart(document.getElementById('env7DayChart'));
-      if (!chart) return;
-      const visible = environmentHistory.slice(-range);
-      chart.data.labels = visible.map(item => item.dateLabel || item.dayLabel || item.date || '');
-      chart.data.datasets[0].data = visible.map(item => item.aqi ?? null);
-      chart.data.datasets[1].data = visible.map(item => item.temp ?? null);
-      chart.data.datasets[2].data = visible.map(item => item.humidity ?? null);
-      fitEnvironmentAxes(chart, visible);
-      chart.update();
-    }
-    refreshEnvironmentHistory(7);
+      refreshEnvironmentHistory(7);
     });
   </script>
 </body>
