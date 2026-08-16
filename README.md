@@ -47,3 +47,5 @@ This project uses a live Firebase project (config in `js/firebase.js`). To run y
 
 ### Notes
 The demo mode (no Firebase login) uses generated mock data so the app is fully explorable without setup.
+
+The encryption file has been created, but it hasn’t been integrated into the app yet. This is a feature we can implement in the future.
