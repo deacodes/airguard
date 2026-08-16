@@ -18,7 +18,6 @@
   <div class="app">
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- SIDEBAR NAVIGATION -->
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-brand">
         <span class="brand-dot"></span> AIRGUARD
@@ -104,7 +103,6 @@
       </div>
     </aside>
 
-    <!-- MAIN VIEWPORT -->
     <div class="main-content-wrap">
       <div class="topbar-mobile">
         <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
@@ -126,7 +124,6 @@
 
         <div style="display:grid; grid-template-columns:1.35fr 0.65fr; gap:20px; align-items:start;">
 
-          <!-- CHAT SHELL CARD -->
           <div class="card ai-shell">
             <div
               style="display:flex; justify-content:space-between; align-items:center; padding-bottom:14px; border-bottom:1px solid var(--border-soft);">
@@ -141,7 +138,6 @@
               </span>
             </div>
 
-            <!-- MESSAGES STREAM CONTAINER -->
             <div class="ai-messages-wrap" id="aiChatBox">
 
               <div class="ai-msg">
@@ -161,7 +157,6 @@
 
             </div>
 
-            <!-- PROMPT SUGGESTION CHIPS -->
             <div class="ai-prompts-row">
               <button type="button" class="ai-prompt-chip" data-ask="Why was today flagged?">Why was today
                 flagged?</button>
@@ -173,7 +168,6 @@
                 window?</button>
             </div>
 
-            <!-- INPUT BAR -->
             <div class="ai-input-bar">
               <input type="text" id="aiInput"
                 placeholder="Ask AIRGUARD about your patterns, environment, or suggestions…">
@@ -181,7 +175,6 @@
             </div>
           </div>
 
-          <!-- RIGHT COLUMN: PRIVACY BOUNDARY & STRUCTURED PARAMETERS -->
           <div style="display:flex; flex-direction:column; gap:16px;">
 
             <div class="card">
@@ -190,19 +183,19 @@
                 <div style="padding:10px 12px; background:var(--app-bg); border-radius:8px; font-size:12.5px;">
                   <b style="display:block; font-size:11px; text-transform:uppercase; color:var(--text-tertiary);">Environmental
                     Feed</b>
-                  <span>AQI 128 · 34°C · 72% humidity · UV High</span>
+                  <span id="aiInspectEnv">Loading…</span>
                 </div>
 
                 <div style="padding:10px 12px; background:var(--app-bg); border-radius:8px; font-size:12.5px;">
                   <b style="display:block; font-size:11px; text-transform:uppercase; color:var(--text-tertiary);">Baseline
                     History</b>
-                  <span>30 days logged · 11 high-humidity days · 9 high-AQI days</span>
+                  <span id="aiInspectBaseline">Loading…</span>
                 </div>
 
                 <div style="padding:10px 12px; background:var(--app-bg); border-radius:8px; font-size:12.5px;">
                   <b style="display:block; font-size:11px; text-transform:uppercase; color:var(--text-tertiary);">Wellness
                     Summary</b>
-                  <span>Energy 5.8 / 10 · Comfort 6.2 / 10 · Sleep 6h 14m</span>
+                  <span id="aiInspectWellness">Loading…</span>
                 </div>
               </div>
 
@@ -339,7 +332,59 @@
     `;
         chatBox.appendChild(msg);
         chatBox.scrollTop = chatBox.scrollHeight;
-        if (persist) persistMessage(sender, htmlText); // keep saving the raw text — sanitize only at render time
+        if (persist) persistMessage(sender, htmlText);
+      }
+
+      function updateInspectEnvFeed() {
+        const el = document.getElementById('aiInspectEnv');
+        if (!el) return;
+        const c = window.AIRGUARD.currentEnvironment;
+        if (!c) { el.textContent = 'Live environment not loaded yet'; return; }
+        const parts = [];
+        if (Number.isFinite(c.aqi)) parts.push(`AQI ${Math.round(c.aqi)}`);
+        if (Number.isFinite(c.temperature_c)) parts.push(`${Math.round(c.temperature_c)}°C`);
+        if (Number.isFinite(c.humidity_pct)) parts.push(`${Math.round(c.humidity_pct)}% humidity`);
+        if (Number.isFinite(c.uv_index)) {
+          const level = c.uv_index <= 2 ? 'Low' : c.uv_index <= 5 ? 'Moderate' : c.uv_index <= 7 ? 'High' : c.uv_index <= 10 ? 'Very High' : 'Extreme';
+          parts.push(`UV ${level}`);
+        }
+        el.textContent = parts.length ? parts.join(' · ') : 'No live environmental data';
+      }
+
+      function updateInspectBaselineAndWellness(data) {
+        const checkins = data?.checkins || [];
+        const days = window.AIRGUARD.daysData || [];
+        const usingCheckins = checkins.length > 0;
+        const rows = usingCheckins ? checkins : days;
+        const humidityOf = row => usingCheckins ? Number(row.environment?.humidity_pct) : Number(row.humidity);
+        const aqiOf = row => usingCheckins ? Number(row.environment?.aqi) : Number(row.aqi);
+
+        const baseEl = document.getElementById('aiInspectBaseline');
+        if (baseEl) {
+          if (!rows.length) {
+            baseEl.textContent = 'No check-ins logged yet';
+          } else {
+            const highHumidityDays = rows.filter(row => humidityOf(row) > 60).length;
+            const highAqiDays = rows.filter(row => aqiOf(row) > 100).length;
+            baseEl.textContent = `${rows.length} days logged · ${highHumidityDays} high-humidity days · ${highAqiDays} high-AQI days`;
+          }
+        }
+
+        const wellEl = document.getElementById('aiInspectWellness');
+        if (wellEl) {
+          const avg = key => {
+            const values = rows.map(item => Number(item[key])).filter(Number.isFinite);
+            return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+          };
+          const energy = avg('energy');
+          const comfort = avg('comfort');
+          const sleep = avg('sleep');
+          const parts = [];
+          if (energy != null) parts.push(`Energy ${energy.toFixed(1)} / 10`);
+          if (comfort != null) parts.push(`Comfort ${comfort.toFixed(1)} / 10`);
+          if (sleep != null) parts.push(`Sleep ${Math.floor(sleep)}h ${Math.round((sleep % 1) * 60)}m`);
+          wellEl.textContent = parts.length ? parts.join(' · ') : 'No wellness entries yet';
+        }
       }
 
       async function handleSend() {
@@ -377,12 +422,23 @@
           handleSend();
         });
       });
+
+      updateInspectEnvFeed();
+      updateInspectBaselineAndWellness(window.AIRGUARD.getUserData?.());
+      window.addEventListener('airguard-current-environment', updateInspectEnvFeed);
+      // main.js's own DOMContentLoaded handler only calls updateCurrentEnvironment(),
+      // which never sets window.AIRGUARD.currentEnvironment or fires this event.
+      // Call loadCurrentEnvironment() ourselves so the panel actually gets live data.
+      window.AIRGUARD.loadCurrentEnvironment?.();
+
       window.addEventListener('airguard-data-ready', event => {
+        updateInspectBaselineAndWellness(event.detail);
         if (!chatBox || chatBox.dataset.historyLoaded) return;
         chatBox.dataset.historyLoaded = 'true';
         renderSavedConversation(event.detail);
       });
       window.AIRGUARD.getUserDataReady?.().then(data => {
+        updateInspectBaselineAndWellness(data);
         if (!chatBox.dataset.historyLoaded) {
           chatBox.dataset.historyLoaded = 'true';
           renderSavedConversation(data);
