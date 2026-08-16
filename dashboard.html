@@ -409,21 +409,32 @@ document.addEventListener('DOMContentLoaded', () => {
   Chart.defaults.color = "#8A939A";
 
   // Comfort comparison mini chart on Overview insight card
-  const comfortRecords = (window.AIRGUARD?.daysData || []).filter(day => day.comfort != null);
-  const comfortAverage = comfortRecords.length ? comfortRecords.reduce((sum, day) => sum + Number(day.comfort), 0) / comfortRecords.length : null;
-  const latestComfort = comfortRecords.length ? Number(comfortRecords[comfortRecords.length - 1].comfort) : null;
-  const baselineComfortSeries = comfortAverage == null ? [] : [comfortAverage, comfortAverage];
-  const todayComfortSeries = latestComfort == null ? [] : [null, latestComfort];
   const compCtx = document.getElementById("comfortComparisonChart");
   let comfortChart = null;
-  if (compCtx && comfortRecords.length) {
+  function renderComparisonChart(data) {
+    const records = (data?.checkins || window.AIRGUARD?.daysData || []).slice().sort((a, b) => new Date(a.createdAt || a.timestamp || a.date) - new Date(b.createdAt || b.timestamp || b.date));
+    const metricRecords = metric => records.map(item => item[metric] ?? item).filter(item => item?.[metric] != null || Number.isFinite(Number(item)));
+    const existingEmpty = compCtx?.parentElement?.querySelector('.comparison-empty');
+    if (existingEmpty) existingEmpty.remove();
+    if (!compCtx) return;
+    if (comfortChart) { comfortChart.destroy(); comfortChart = null; }
+    const valid = records.filter(item => item.comfort != null || item.energy != null);
+    if (!valid.length) {
+      compCtx.style.display = 'none';
+      const empty = document.createElement('p'); empty.className = 'comparison-empty secondary-text'; empty.textContent = 'Add a check-in to compare your baseline with today.'; compCtx.parentElement.appendChild(empty);
+      return;
+    }
+    compCtx.style.display = '';
+    const comfortRecords = valid.filter(day => day.comfort != null);
+    const comfortAverage = comfortRecords.length ? comfortRecords.reduce((sum, day) => sum + Number(day.comfort), 0) / comfortRecords.length : null;
+    const latestComfort = comfortRecords.length ? Number(comfortRecords[comfortRecords.length - 1].comfort) : null;
     comfortChart = new Chart(compCtx, {
       type: "line",
       data: {
         labels: ['Baseline average', 'Today'],
         datasets: [
-          { data: baselineComfortSeries, borderColor: "#2F6FEB", borderWidth: 2, pointRadius: 2.5, tension: 0.35 },
-          { data: todayComfortSeries, borderColor: "#E5484D", borderWidth: 2, pointRadius: 2.5, tension: 0.35 }
+          { data: comfortAverage == null ? [null, null] : [comfortAverage, comfortAverage], borderColor: "#2F6FEB", borderWidth: 2, pointRadius: 2.5, tension: 0.35 },
+          { data: latestComfort == null ? [null, null] : [null, latestComfort], borderColor: "#E5484D", borderWidth: 2, pointRadius: 2.5, tension: 0.35 }
         ]
       },
       options: {
@@ -433,6 +444,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+  renderComparisonChart({ checkins: window.AIRGUARD?.daysData || [] });
+  window.addEventListener('airguard-data-ready', event => renderComparisonChart(event.detail));
   function updateComfortMetric(metric) {
     if (!comfortChart) return;
     const records = (window.AIRGUARD?.daysData || []).filter(day => day[metric] != null);

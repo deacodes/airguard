@@ -380,6 +380,9 @@
     todayEntry = daysData[daysData.length - 1];
     yesterdayEntry = daysData[daysData.length - 2];
     exampleEntry = daysData[daysData.length - 4];
+    window.AIRGUARD.daysData = daysData;
+    window.AIRGUARD.todayEntry = todayEntry;
+    window.AIRGUARD.yesterdayEntry = yesterdayEntry;
     applyUserMode(data);
   });
 
@@ -413,16 +416,6 @@
     // These surfaces previously contained prewritten sample insights. They
     // are intentionally absent for signed-in users until real backend data
     // exists; only the explicit demo session may display them.
-    const dashboardInsight = document.getElementById('dashboardPersonalInsight');
-    if (dashboardInsight) {
-      dashboardInsight.querySelectorAll(':scope > *:not(.mini-chart-wrap)').forEach(el => el.remove());
-      const empty = document.createElement('p');
-      empty.className = 'secondary-text';
-      empty.textContent = data.checkins?.length ? 'Your personal comparison graph will populate as more check-ins are recorded.' : 'Your personal graph will appear after you record check-ins.';
-      dashboardInsight.insertBefore(empty, dashboardInsight.firstChild);
-      const canvas = dashboardInsight.querySelector('#comfortComparisonChart');
-      if (canvas && window.Chart?.getChart(canvas)) window.Chart.getChart(canvas).destroy();
-    }
     const wellnessGrid = document.getElementById('dashboardWellnessGrid');
     if (wellnessGrid) {
       const checkins = data.checkins || [];
@@ -439,14 +432,8 @@
         return `<div class="card stat-card"><div class="stat-label">${label}</div><div class="stat-value">${display}</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:${width}%;background:${color};"></div></div><div class="stat-caption">${value == null ? 'Enter data to view stats' : 'From your latest check-in'}</div></div>`;
       }).join('');
     }
-    const weeklySummary = document.getElementById('weeklySummaryGrid');
-    if (weeklySummary) weeklySummary.querySelectorAll('.stat-card').forEach(card => {
-      const value = card.querySelector('.stat-value');
-      const caption = card.querySelector('.stat-caption');
-      if (value) value.textContent = 'Not available yet';
-      if (caption) caption.textContent = 'Awaiting enough weekly data';
-    });
     const weeklyPattern = document.getElementById('weeklyPatternCard');
+    renderWeeklySummary(data);
     if (weeklyPattern) {
       const title = weeklyPattern.querySelector('.card-heading');
       const description = weeklyPattern.querySelector('.body-text');
@@ -480,6 +467,36 @@
         empty.textContent = 'Not enough personal data yet — this graph will fill in after your first check-ins.';
         parent.appendChild(empty);
       }
+    });
+  }
+
+  function renderWeeklySummary(data) {
+    const grid = document.getElementById('weeklySummaryGrid');
+    if (!grid) return;
+    const entries = (data?.checkins || []).slice().sort((a, b) => new Date(a.createdAt || a.timestamp) - new Date(b.createdAt || b.timestamp));
+    const recent = entries.slice(-7);
+    const enough = recent.length >= 7;
+    const latest = recent[recent.length - 1] || {};
+    const valueFor = (key, environmentKey) => {
+      if (!recent.length) return null;
+      if (!enough) return environmentKey ? latest.environment?.[environmentKey] : latest[key];
+      const values = recent.map(item => environmentKey ? item.environment?.[environmentKey] : item[key]).map(Number).filter(Number.isFinite);
+      return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+    };
+    const format = (value, suffix = '') => value == null ? '—' : `${Number(value).toFixed(suffix === ' / 10' ? 1 : 0)}${suffix}`;
+    const sleep = valueFor('sleep');
+    const sleepText = sleep == null ? '—' : `${Math.floor(sleep)}h ${Math.round((sleep % 1) * 60)}m`;
+    const cards = [
+      [format(valueFor('aqi', 'aqi')), enough ? 'Average from your last 7 check-ins' : 'Most recent entry'],
+      [format(valueFor('energy'), ' / 10'), enough ? 'Average from your last 7 check-ins' : 'Most recent entry'],
+      [format(valueFor('comfort'), ' / 10'), enough ? 'Average from your last 7 check-ins' : 'Most recent entry'],
+      [sleepText, enough ? 'Average from your last 7 check-ins' : 'Most recent entry']
+    ];
+    grid.querySelectorAll('.stat-card').forEach((card, index) => {
+      const value = card.querySelector('.stat-value');
+      const caption = card.querySelector('.stat-caption');
+      if (value) value.textContent = cards[index][0];
+      if (caption) caption.innerHTML = `${cards[index][1]}${enough ? '' : ' <span title="Less than 7 check-ins">!</span> (not enough data)'}`;
     });
   }
 

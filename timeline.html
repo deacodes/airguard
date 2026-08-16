@@ -448,9 +448,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const month = label.split(' ')[0] || '';
     const num = label.split(' ')[1] || '';
     document.getElementById("selectedDateTitle").textContent = `${month} ${num}`;
-    document.getElementById("panelEnergyNum").textContent = d.energy.toFixed(1);
-    document.getElementById("panelComfortNum").textContent = d.comfort.toFixed(1);
-    document.getElementById("panelEnvText").textContent = `AQI ${d.aqi} · ${d.temp}°C · ${d.humidity}% humidity`;
+    document.getElementById("panelEnergyNum").textContent = d.energy == null ? '—' : Number(d.energy).toFixed(1);
+    document.getElementById("panelComfortNum").textContent = d.comfort == null ? '—' : Number(d.comfort).toFixed(1);
+    document.getElementById("panelEnvText").textContent = `AQI ${d.aqi ?? '—'} · ${d.temp == null ? '—' : `${d.temp}°C`} · ${d.humidity == null ? '—' : `${d.humidity}% humidity`}`;
     const tagRow = document.getElementById("panelSymptomsRow");
     tagRow.innerHTML = d.symptoms.length
       ? d.symptoms.map(s => `<span class="tag">${s}</span>`).join('')
@@ -469,8 +469,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   renderTimelineChart(30);
-  const aug12 = days.find(d => d.dateLabel === 'Aug 12') || days[days.length - 4];
-  if (aug12) showDayDetail(aug12);
+  const mostRecent = days[days.length - 1];
+  if (mostRecent) showDayDetail(mostRecent);
 });
 </script>
 </body>
