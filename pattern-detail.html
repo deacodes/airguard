@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('pdBaseline').textContent = pattern.baselineVal;
   document.getElementById('pdDiff').textContent = pattern.deltaVal;
 
-  if (localStorage.getItem('airguard_demo') !== 'true' && window.AIRGUARD_FIREBASE?.getCachedData?.()) {
+  if (localStorage.getItem('airguard_demo') !== 'true') {
     ['pdTitle', 'pdMatching', 'pdLower', 'pdStrength', 'pdConfidence', 'pdFound', 'pdToday', 'pdBaseline', 'pdDiff'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.textContent = id === 'pdTitle' ? 'Pattern evidence pending' : 'Not available yet';

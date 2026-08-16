@@ -407,11 +407,20 @@
       profile.innerHTML = `<div style="width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--purple-bg);color:var(--purple-fg);font-size:11px;font-weight:800;">${initials}</div><div style="min-width:0;"><div style="font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div><div style="font-size:10px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${data.email || ''}</div></div>`;
       sidebarBottom.prepend(profile);
     }
+    const activities = (data.activities || []).slice().sort((a, b) => new Date(b.createdAt || b.timestamp || 0) - new Date(a.createdAt || a.timestamp || 0));
+    const formatActivity = (item, compact = false) => {
+      const recorded = item.createdAt || item.timestamp;
+      const date = recorded ? new Date(recorded).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Saved activity';
+      const details = [item.duration, item.plannedTime && `Planned ${item.plannedTime}`, item.location].filter(Boolean).join(' · ') || 'Details will appear after saving';
+      return `<div style="padding:${compact ? '11px 12px' : '15px 16px'};border:1px solid var(--border-soft);border-radius:12px;background:var(--surface-subtle, #faf9fc);display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <div style="min-width:0;"><div style="font-weight:800;">${item.activity || 'Activity'}</div><div class="secondary-text" style="font-size:12px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${details}</div></div>
+        <div class="secondary-text" style="font-size:11px;white-space:nowrap;text-align:right;">${date}</div>
+      </div>`;
+    };
     const timelineActivities = document.getElementById('timelineActivityList');
-    if (timelineActivities) {
-      const activities = data.activities || [];
-      timelineActivities.innerHTML = activities.length ? activities.map(item => `<div style="padding:10px 0;border-bottom:1px solid var(--border-soft);"><b>${item.activity || 'Activity'}</b> · ${item.duration || '—'} · ${item.plannedTime || '—'}<br><span class="secondary-text" style="font-size:12px;">${new Date(item.createdAt).toLocaleString()} · ${item.location || 'Saved location'}</span></div>`).join('') : 'No activities recorded yet.';
-    }
+    if (timelineActivities) timelineActivities.innerHTML = activities.length ? activities.map(item => formatActivity(item)).join('') : '<div class="secondary-text" style="padding:18px 0;">No activities yet. Start an activity to build your personal history.</div>';
+    const dashboardActivities = document.getElementById('dashboardActivityList');
+    if (dashboardActivities) dashboardActivities.innerHTML = activities.length ? activities.slice(0, 3).map(item => formatActivity(item, true)).join('') : '<div class="secondary-text" style="padding:10px 0;">No activities yet. Your saved activity plans will appear here.</div>';
 
     // These surfaces previously contained prewritten sample insights. They
     // are intentionally absent for signed-in users until real backend data
@@ -431,6 +440,17 @@
         const width = value == null ? 0 : label === 'SLEEP' ? Math.min(100, Number(value) / 8 * 100) : label === 'MOVEMENT' ? Math.min(100, Number(value) / 60 * 100) : Number(value) * 10;
         return `<div class="card stat-card"><div class="stat-label">${label}</div><div class="stat-value">${display}</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:${width}%;background:${color};"></div></div><div class="stat-caption">${value == null ? 'Enter data to view stats' : 'From your latest check-in'}</div></div>`;
       }).join('');
+    }
+    const dashboardPattern = document.getElementById('dashboardPersonalInsight');
+    if (dashboardPattern) {
+      const patternBody = dashboardPattern.querySelector('.body-text');
+      const patternAverage = dashboardPattern.querySelector('.avg-highlight-line');
+      const comparisonBars = dashboardPattern.querySelector('.cmp-bar-container');
+      const evidenceButton = dashboardPattern.querySelector('[data-open-modal="evidenceModal"]');
+      if (patternBody) patternBody.textContent = 'Personal pattern insights will appear here after AIRGUARD has enough saved history to compare your environment and check-ins.';
+      if (patternAverage) patternAverage.textContent = 'No pattern evidence is available yet.';
+      if (comparisonBars) comparisonBars.style.display = 'none';
+      if (evidenceButton) evidenceButton.style.display = 'none';
     }
     const weeklyPattern = document.getElementById('weeklyPatternCard');
     renderWeeklySummary(data);

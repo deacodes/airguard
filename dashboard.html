@@ -262,6 +262,18 @@
         </div>
       </div>
 
+      <div class="card" id="dashboardActivityPanel" style="margin-top:24px; padding:20px;">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
+          <div>
+            <div class="eyebrow" style="margin-bottom:5px;font-weight:700;">Movement</div>
+            <h2 class="section-heading" style="margin:0 0 5px;">Activities</h2>
+            <p class="secondary-text" style="margin:0;">Your latest saved activities and planned windows.</p>
+          </div>
+          <a class="btn btn-outline btn-sm" href="activity.html">Plan activity</a>
+        </div>
+        <div id="dashboardActivityList" style="display:grid;gap:8px;">No activities recorded yet.</div>
+      </div>
+
       <div class="divider-space"></div>
 
       <!-- YOUR WELLNESS 4 STAT CARDS -->
@@ -433,14 +445,32 @@ document.addEventListener('DOMContentLoaded', () => {
       data: {
         labels: ['Baseline average', 'Today'],
         datasets: [
-          { data: comfortAverage == null ? [null, null] : [comfortAverage, comfortAverage], borderColor: "#2F6FEB", borderWidth: 2, pointRadius: 2.5, tension: 0.35 },
-          { data: latestComfort == null ? [null, null] : [null, latestComfort], borderColor: "#E5484D", borderWidth: 2, pointRadius: 2.5, tension: 0.35 }
+          { label: 'Baseline days', data: comfortAverage == null ? [null, null] : [comfortAverage, comfortAverage], borderColor: "#2F6FEB", backgroundColor: "rgba(47,111,235,.12)", borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 7, tension: 0.35 },
+          { label: 'Today', data: latestComfort == null ? [null, null] : [null, latestComfort], borderColor: "#E5484D", backgroundColor: "rgba(229,72,77,.14)", borderWidth: 2.5, pointRadius: 5, pointHoverRadius: 8, tension: 0.35 }
         ]
       },
       options: {
         responsive: true,
-        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-        scales: { x: { display: false }, y: { display: false, min: 0, max: 10 } }
+        interaction: { mode: 'nearest', intersect: false },
+        onClick: (event, elements) => {
+          if (!elements.length) return;
+          const point = elements[0];
+          const value = comfortChart.data.datasets[point.datasetIndex].data[point.index];
+          if (value != null) window.AIRGUARD?.showToast(`${comfortChart.data.datasets[point.datasetIndex].label}: ${Number(value).toFixed(1)} / 10`);
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: true,
+            callbacks: {
+              label: context => `${context.dataset.label}: ${Number(context.parsed.y).toFixed(1)} / 10`
+            }
+          }
+        },
+        scales: {
+          x: { display: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+          y: { display: true, min: 0, max: 10, ticks: { stepSize: 2, font: { size: 10 } }, grid: { color: '#EEF2F2' }, title: { display: true, text: 'Score', font: { size: 10 } } }
+        }
       }
     });
   }
@@ -456,6 +486,8 @@ document.addEventListener('DOMContentLoaded', () => {
     comfortChart.data.datasets[1].data = [null, latest];
     comfortChart.options.scales.y.min = 0;
     comfortChart.options.scales.y.max = 10;
+    comfortChart.data.datasets[0].label = `${metric[0].toUpperCase() + metric.slice(1)} baseline`;
+    comfortChart.options.plugins.tooltip.callbacks.label = context => `${context.dataset.label}: ${Number(context.parsed.y).toFixed(1)} / 10`;
     comfortChart.update();
     document.querySelector('.mc-title .t').textContent = `${metric[0].toUpperCase() + metric.slice(1)} comparison`;
   }
