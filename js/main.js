@@ -352,13 +352,18 @@
       const response = await fetch(`${window.AIRGUARD_ENV_API}/environment/history?${params}`);
       if (response.ok) return (await response.json()).days || [];
     }
-    const [weatherResponse, airResponse] = await Promise.all([
-      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=temperature_2m_mean,relative_humidity_2m_mean&past_days=${Math.min(days, 92)}&forecast_days=1&timezone=auto`),
-      fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lng}&hourly=us_aqi&past_days=${Math.min(days, 92)}&forecast_days=1&timezone=auto`)
-    ]);
-    if (!weatherResponse.ok || !airResponse.ok) throw new Error('Environmental history is unavailable.');
+    const weatherResponse = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=temperature_2m_mean,relative_humidity_2m_mean&past_days=${Math.min(days, 92)}&forecast_days=1&timezone=auto`);
+    if (!weatherResponse.ok) throw new Error(`Weather history request failed: ${weatherResponse.status}`);
     const weather = await weatherResponse.json();
-    const air = await airResponse.json();
+    // AQI is a useful enhancement, but it should not prevent the weather
+    // history from rendering when that separate service is unavailable.
+    let air = { hourly: {} };
+    try {
+      const airResponse = await fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lng}&hourly=us_aqi&past_days=${Math.min(days, 92)}&forecast_days=1&timezone=auto`);
+      if (airResponse.ok) air = await airResponse.json();
+    } catch (error) {
+      console.info('AQI history unavailable; rendering weather history', error);
+    }
     const aqiByDate = {};
     (air.hourly?.time || []).forEach((time, index) => {
       const date = time.slice(0, 10);
@@ -412,7 +417,7 @@
       const recorded = item.createdAt || item.timestamp;
       const date = recorded ? new Date(recorded).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Saved activity';
       const details = [item.duration, item.plannedTime && `Planned ${item.plannedTime}`, item.location].filter(Boolean).join(' · ') || 'Details will appear after saving';
-      return `<div style="padding:${compact ? '11px 12px' : '15px 16px'};border:1px solid var(--border-soft);border-radius:12px;background:var(--surface-subtle, #faf9fc);display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      return `<div style="padding:${compact ? '11px 12px' : '15px 16px'};border:1px solid var(--border-soft);border-radius:12px;background:var(--card-bg);display:flex;align-items:center;justify-content:space-between;gap:12px;">
         <div style="min-width:0;"><div style="font-weight:800;">${item.activity || 'Activity'}</div><div class="secondary-text" style="font-size:12px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${details}</div></div>
         <div class="secondary-text" style="font-size:11px;white-space:nowrap;text-align:right;">${date}</div>
       </div>`;

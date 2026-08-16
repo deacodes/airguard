@@ -418,7 +418,9 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Chart.js default setup
   Chart.defaults.font.family = "'DM Sans', sans-serif";
-  Chart.defaults.color = "#8A939A";
+  const darkMode = document.body.classList.contains('dark-theme');
+  const chartGridColor = darkMode ? '#30363d' : '#EEF2F2';
+  Chart.defaults.color = darkMode ? '#8B949E' : '#8A939A';
 
   // Comfort comparison mini chart on Overview insight card
   const compCtx = document.getElementById("comfortComparisonChart");
@@ -469,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         scales: {
           x: { display: true, grid: { display: false }, ticks: { font: { size: 10 } } },
-          y: { display: true, min: 0, max: 10, ticks: { stepSize: 2, font: { size: 10 } }, grid: { color: '#EEF2F2' }, title: { display: true, text: 'Score', font: { size: 10 } } }
+          y: { display: true, min: 0, max: 10, ticks: { stepSize: 2, font: { size: 10 } }, grid: { color: chartGridColor }, title: { display: true, text: 'Score', font: { size: 10 } } }
         }
       }
     });
@@ -553,7 +555,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         scales: {
           x: { grid: { display: false } },
-          y: { position: "left", min: 50, max: 170, title: { display: true, text: "AQI", font: { size: 11 } }, grid: { color: "#F0F5F4" } },
+          y: { position: "left", min: 50, max: 170, title: { display: true, text: "AQI", font: { size: 11 } }, grid: { color: chartGridColor } },
           y1: { position: "right", min: 0, max: 10, title: { display: true, text: "Comfort", font: { size: 11 } }, grid: { display: false } }
         }
       }

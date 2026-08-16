@@ -436,9 +436,26 @@
           try { await firebase.saveProfile(user, { location: saved }); } catch (error) { console.error('Could not save location', error); }
         }
         applyLocationLabel(saved);
+        // Refresh this page immediately so the newly selected coordinates are
+        // used for both current conditions and the history chart.
+        window.AIRGUARD.loadCurrentEnvironment?.();
+        refreshEnvironmentHistory(Number(document.querySelector('[data-env-range].active')?.dataset.envRange || 7));
         window.AIRGUARD.closeModal('locationModal');
         window.AIRGUARD.showToast(`Switched location to ${saved.label}`);
       });
+
+      // Settings links here with #location so the picker opens directly.
+      if (window.location.hash === '#location') {
+        window.AIRGUARD.openModal('locationModal');
+        setTimeout(() => {
+          initEnvironmentMap();
+          if (environmentMap) {
+            environmentMap.setView([pendingLocation.lat, pendingLocation.lng], 11);
+            environmentMarker.setLatLng([pendingLocation.lat, pendingLocation.lng]);
+            environmentMap.invalidateSize();
+          }
+        }, 80);
+      }
     });
 
     // Switch the environment history chart between real 7/30/90-day windows.
@@ -459,18 +476,25 @@
       });
     });
     async function refreshEnvironmentHistory(range) {
+      let records;
       try {
         const location = window.AIRGUARD.getSavedLocation();
-        environmentHistory = await window.AIRGUARD.fetchEnvironmentHistory(location.lat, location.lng, range);
-        const chart = window.Chart?.getChart(document.getElementById('env7DayChart'));
-        if (!chart) return;
-        chart.data.labels = environmentHistory.slice(-range).map(item => item.dateLabel || item.dayLabel);
-        chart.data.datasets[0].data = environmentHistory.slice(-range).map(item => item.aqi);
-        chart.data.datasets[1].data = environmentHistory.slice(-range).map(item => item.temp);
-        chart.data.datasets[2].data = environmentHistory.slice(-range).map(item => item.humidity);
-        fitEnvironmentAxes(chart, environmentHistory.slice(-range));
-        chart.update();
-      } catch (error) { window.AIRGUARD.showToast('Environmental history is unavailable right now.'); }
+        records = await window.AIRGUARD.fetchEnvironmentHistory(location.lat, location.lng, range);
+      } catch (error) {
+        console.warn('Could not load environmental history', error);
+        window.AIRGUARD.showToast('Live environmental history could not be loaded. Please try again.');
+        return;
+      }
+      environmentHistory = Array.isArray(records) ? records : [];
+      const chart = window.Chart?.getChart(document.getElementById('env7DayChart'));
+      if (!chart) return;
+      const visible = environmentHistory.slice(-range);
+      chart.data.labels = visible.map(item => item.dateLabel || item.dayLabel || item.date || '');
+      chart.data.datasets[0].data = visible.map(item => item.aqi ?? null);
+      chart.data.datasets[1].data = visible.map(item => item.temp ?? null);
+      chart.data.datasets[2].data = visible.map(item => item.humidity ?? null);
+      fitEnvironmentAxes(chart, visible);
+      chart.update();
     }
     refreshEnvironmentHistory(7);
   </script>

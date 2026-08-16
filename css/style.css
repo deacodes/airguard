@@ -75,6 +75,63 @@ body.dark-theme {
   --purple-border: #382b66;
 }
 
+/* Keep controls and elevated surfaces in sync with the dark canvas. A few
+   older cards use literal light colors, so these overrides prevent bright
+   white islands from appearing when dark mode is enabled. */
+body.dark-theme input,
+body.dark-theme select,
+body.dark-theme textarea,
+body.dark-theme .modal-box,
+body.dark-theme .hero-spotlight-card,
+body.dark-theme .landing-value-card,
+body.dark-theme .btn-white {
+  background: var(--card-bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+body.dark-theme input::placeholder,
+body.dark-theme textarea::placeholder {
+  color: var(--text-tertiary);
+}
+
+body.dark-theme .map-selection-status,
+body.dark-theme .leaflet-control-zoom a,
+body.dark-theme .leaflet-control-attribution {
+  background: var(--card-bg) !important;
+  color: var(--text-secondary) !important;
+  border-color: var(--border) !important;
+}
+
+body.dark-theme .leaflet-control-attribution a,
+body.dark-theme .leaflet-control-zoom a {
+  color: var(--blue) !important;
+}
+
+body.dark-theme .btn-outline,
+body.dark-theme .chip,
+body.dark-theme .toggle-btn,
+body.dark-theme .ai-input-bar input,
+body.dark-theme option {
+  background: var(--card-bg);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+body.dark-theme .chip.selected,
+body.dark-theme .toggle-btn.active {
+  background: var(--text);
+  color: var(--app-bg);
+  border-color: var(--text);
+}
+
+body.dark-theme .dashboardActivityList > div,
+body.dark-theme #timelineActivityList > div {
+  background: var(--card-bg) !important;
+  color: var(--text);
+  border-color: var(--border-soft) !important;
+}
+
 /* =====================================================
    RESET & BASE TYPOGRAPHY
    ===================================================== */
@@ -603,11 +660,7 @@ a {
 }
 
 .brand-dot {
-  width: 8.5px;
-  height: 8.5px;
-  border-radius: 50%;
-  background: var(--blue);
-  box-shadow: 0 0 0 3px rgba(47, 111, 235, 0.25);
+  display: none;
 }
 
 .sidebar-nav {
@@ -2028,4 +2081,53 @@ input[type="range"]::-moz-range-thumb {
   .grid-2 {
     grid-template-columns: 1fr;
   }
+}
+
+/* Final dark-theme surface overrides. Keep these after the component rules
+   so base light-mode declarations cannot overwrite them. */
+body.dark-theme .btn-dark,
+body.dark-theme .btn-white,
+body.dark-theme .chip.selected,
+body.dark-theme .toggle-btn.active {
+  background: #252c36 !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+body.dark-theme .btn-dark:hover,
+body.dark-theme .btn-white:hover,
+body.dark-theme .chip.selected:hover,
+body.dark-theme .toggle-btn.active:hover {
+  background: #303946 !important;
+}
+
+body.dark-theme .btn-outline,
+body.dark-theme .chip,
+body.dark-theme .toggle-btn,
+body.dark-theme select,
+body.dark-theme option,
+body.dark-theme input,
+body.dark-theme textarea,
+body.dark-theme .ai-input-bar input {
+  background: #161b22 !important;
+  color: var(--text) !important;
+  border-color: #30363d !important;
+}
+
+body.dark-theme .card,
+body.dark-theme .modal-box,
+body.dark-theme .checkin-step-card,
+body.dark-theme .dashboardActivityList > div,
+body.dark-theme #timelineActivityList > div {
+  background: #161b22 !important;
+  color: var(--text);
+  border-color: #30363d !important;
+}
+
+body.dark-theme .map-selection-status,
+body.dark-theme .leaflet-control-zoom a,
+body.dark-theme .leaflet-control-attribution {
+  background: #161b22 !important;
+  color: var(--text-secondary) !important;
+  border-color: #30363d !important;
 }

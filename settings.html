@@ -129,9 +129,9 @@
           <div class="privacy-row">
             <div>
               <div style="font-weight:700; font-size:14px;">Current Location</div>
-              <div class="secondary-text" style="font-size:12px;">Jaipur, India · Asia/Kolkata</div>
+              <div class="secondary-text" id="settingsLocationLabel" style="font-size:12px;">Loading saved location…</div>
             </div>
-            <a href="environment.html" class="btn btn-outline btn-sm">Change location</a>
+            <a href="environment.html#location" class="btn btn-outline btn-sm">Change location</a>
           </div>
         </div>
 
@@ -273,6 +273,14 @@
 <script src="js/main.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      const renderSettingsLocation = () => {
+        const target = document.getElementById('settingsLocationLabel');
+        const location = window.AIRGUARD?.getSavedLocation?.();
+        if (target && location?.label) target.textContent = location.label;
+      };
+      renderSettingsLocation();
+      window.addEventListener('airguard-data-ready', renderSettingsLocation);
+
       // Theme switch logic
       const themeSwitch = document.getElementById('themeSwitch');
       if (themeSwitch) {
