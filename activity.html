@@ -639,6 +639,8 @@ function pickCandidateHours(hours) {
   // auto-select the recommended one so the page opens already showing the
   // real best window instead of a hardcoded default.
   // ---------------------------------------------------------------------
+  const initialCard = timeCardsContainer?.querySelector('.time-slot-card.active') || timeCardsContainer?.querySelector('.time-slot-card');
+  if (initialCard) updateSlot(initialCard, { silent: true });
   hourlyForecast.then(hours => {
     if (!hours) return; // keep the static fallback cards exactly as they are
     const best = renderForecastWindows(hours);

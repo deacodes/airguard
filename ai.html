@@ -167,6 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatBox = document.getElementById('aiChatBox');
   const input = document.getElementById('aiInput');
   const sendBtn = document.getElementById('aiSendBtn');
+  if (!chatBox || !input || !sendBtn) return;
 
   async function persistMessage(sender, text) {
     const user = window.AIRGUARD_FIREBASE?.currentUser?.();
@@ -181,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
     messages.forEach(item => appendMessage(item.sender, item.text, false));
   }
 
-  function getAIReply(text) {
+  function getAIReplyFallback(text) {
     const q = text.toLowerCase();
     if (q.includes('flag') || q.includes('why')) {
       return "Today was flagged because your ambient humidity is <b>72% (+28% vs your 56% baseline)</b> and AQI is <b>128 (+39% vs baseline)</b>. Across your 30-day history, on 8 of 11 matching days you reported physical energy below 5.5/10.";
@@ -196,6 +197,35 @@ document.addEventListener('DOMContentLoaded', () => {
       return "The optimal window for outdoor activity today is <b>6:30 PM</b>. Temperature will cool from 35°C down to <b>28°C</b>, and AQI will improve to <b>94</b>, matching the conditions from your most comfortable outdoor sessions.";
     }
     return "Based on your 30-day baseline in Jaipur, environmental load is currently higher than normal. Protecting a 60-minute recovery window in the cooler evening (after 6:30 PM) is the most effective micro-adjustment for today.";
+  }
+
+  async function getAIReply(text) {
+    const data = window.AIRGUARD.getUserData?.() || {};
+    const days = window.AIRGUARD.daysData || [];
+    const latest = days[days.length - 1] || {};
+    const checkins = data.checkins || [];
+    const average = key => {
+      const values = checkins.map(item => Number(item[key])).filter(Number.isFinite);
+      return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+    };
+    const averageEnvironment = key => {
+      const values = checkins.map(item => Number(item.environment?.[key])).filter(Number.isFinite);
+      return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+    };
+    try {
+      const base = window.AIRGUARD_ENV_API || 'http://127.0.0.1:5001';
+      const response = await fetch(`${base}/ai/chat`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: text,
+          current_conditions: { temperature_c: latest.temp, humidity_pct: latest.humidity, aqi: latest.aqi },
+          baseline: { temp: averageEnvironment('temperature_c'), humidity: averageEnvironment('humidity_pct'), aqi: averageEnvironment('aqi'), energy: average('energy'), comfort: average('comfort') },
+          patterns: [], activity_context: {}
+        })
+      });
+      if (response.ok) { const result = await response.json(); if (result.reply) return result.reply; }
+    } catch (error) { console.warn('AIRGUARD AI service unavailable; using local response', error); }
+    return getAIReplyFallback(text);
   }
 
   function appendMessage(sender, htmlText, persist = true) {
@@ -218,16 +248,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (persist) persistMessage(sender, htmlText);
   }
 
-  function handleSend() {
+  async function handleSend() {
     const val = input.value.trim();
     if (!val) return;
     appendMessage('user', val);
     input.value = '';
 
-    setTimeout(() => {
-      const reply = getAIReply(val);
-      appendMessage('bot', reply);
-    }, 400);
+    const pendingMessage = document.createElement('div');
+    pendingMessage.className = 'ai-msg';
+    pendingMessage.innerHTML = '<div class="ai-avatar bot">✦</div><div class="ai-bubble"><b>AIRGUARD AI</b><p>AIRGUARD is thinking…</p></div>';
+    chatBox.appendChild(pendingMessage);
+    chatBox.scrollTop = chatBox.scrollHeight;
+    try {
+      const reply = await getAIReply(val);
+      const pending = pendingMessage.querySelector('p');
+      if (pending) pending.innerHTML = reply;
+    } catch (error) {
+      const pending = pendingMessage.querySelector('p');
+      if (pending) pending.textContent = 'I could not complete that request. Please try again.';
+      console.error('AIRGUARD chat error', error);
+    }
   }
 
   sendBtn.addEventListener('click', handleSend);

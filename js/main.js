@@ -328,6 +328,7 @@
     saveLocation,
     reverseGeocode,
     fetchCurrentConditions,
+    fetchHourlyForecast,
     loadCurrentEnvironment
   };
 
@@ -457,15 +458,6 @@
     }
     document.getElementById('dashboardSuggestionCard')?.remove();
     document.getElementById('environmentBaselineCard')?.remove();
-    const activityWindows = document.getElementById('activityForecastWindows');
-    if (activityWindows) activityWindows.innerHTML = '<div class="time-slot-card"><b>—</b><span>—</span></div><div class="time-slot-card"><b>—</b><span>—</span></div><div class="time-slot-card"><b>—</b><span>—</span></div><div class="time-slot-card"><b>—</b><span>—</span></div>';
-    const activityContext = document.getElementById('activityPersonalContext');
-    if (activityContext) {
-      const contextText = activityContext.querySelector('#actInsightLine');
-      const suggestion = activityContext.querySelector('#actSuggestionText');
-      if (contextText) contextText.textContent = 'Ready to record this activity with its live environmental snapshot.';
-      if (suggestion) suggestion.textContent = 'Choose your activity details above, then use Start Activity & Save.';
-    }
     document.querySelectorAll('.pattern-card').forEach(card => {
       const title = card.querySelector('.pattern-title');
       if (title) title.textContent = 'Pattern name pending';
@@ -478,9 +470,6 @@
       if (link) link.textContent = 'Evidence unavailable yet';
     });
     document.querySelectorAll('.ai-summary-card .ai-summary-body, .ai-summary-card .ai-refresh-row, .ai-prompts-row').forEach(el => el.textContent = 'Awaiting personal data');
-    const aiChat = document.getElementById('aiChatBox');
-    if (aiChat) aiChat.innerHTML = '<div class="ai-msg"><div class="ai-avatar bot">✦</div><div class="ai-bubble"><b>AIRGUARD AI</b><p>Hello — I’m AIRGUARD AI. Add personal check-ins and environmental context, and I’ll be ready to help you explore them.</p></div></div>';
-    ['dispTemp', 'dispHumidity', 'dispAqi'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
     ['recentPatternChart', 'env7DayChart', 'weekEnvChart'].forEach(id => {
       const canvas = document.getElementById(id);
       if (!canvas || daysData.length) return;
@@ -696,6 +685,19 @@
     const air = (await airResponse.json()).current || {};
     const pollen = Math.max(air.grass_pollen || 0, air.birch_pollen || 0);
     return { aqi: air.us_aqi, pm2_5: air.pm2_5, pm10: air.pm10, temperature_c: weather.temperature_2m, feels_like_c: weather.apparent_temperature, humidity_pct: weather.relative_humidity_2m, uv_index: weather.uv_index, pollen_level: pollen < 20 ? 'Low' : pollen < 50 ? 'Moderate' : 'High', timestamp: weather.time };
+  }
+
+  async function fetchHourlyForecast(lat, lng) {
+    const [weatherResponse, airResponse] = await Promise.all([
+      fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&hourly=temperature_2m,relative_humidity_2m&forecast_days=2&timezone=auto`),
+      fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${lat}&longitude=${lng}&hourly=us_aqi&forecast_days=2&timezone=auto`)
+    ]);
+    if (!weatherResponse.ok || !airResponse.ok) throw new Error('Hourly environmental data is unavailable.');
+    const weather = await weatherResponse.json();
+    const air = await airResponse.json();
+    const airByTime = {};
+    (air.hourly?.time || []).forEach((time, index) => { airByTime[time] = air.hourly.us_aqi?.[index]; });
+    return (weather.hourly?.time || []).map((time, index) => ({ time, temp: weather.hourly.temperature_2m?.[index] ?? null, humidity: weather.hourly.relative_humidity_2m?.[index] ?? null, aqi: airByTime[time] ?? null }));
   }
 
   // load the current location 
