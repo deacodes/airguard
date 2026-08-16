@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AIRGUARD — My Patterns</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <style>
     /* AI Summary Card */
@@ -17,6 +20,7 @@
       padding: 24px;
       margin-bottom: 28px;
     }
+
     .ai-summary-header {
       display: flex;
       align-items: center;
@@ -25,6 +29,7 @@
       flex-wrap: wrap;
       gap: 10px;
     }
+
     .ai-summary-label {
       display: flex;
       align-items: center;
@@ -35,12 +40,17 @@
       letter-spacing: 0.05em;
       text-transform: uppercase;
     }
+
     .ai-summary-body {
       font-size: 14.5px;
       line-height: 1.7;
       color: var(--text);
     }
-    .ai-summary-body strong { color: var(--purple-fg); }
+
+    .ai-summary-body strong {
+      color: var(--purple-fg);
+    }
+
     .ai-summary-refresh {
       font-size: 12.5px;
       color: var(--text-secondary);
@@ -59,7 +69,11 @@
       background: var(--card-bg);
       transition: box-shadow 0.15s;
     }
-    .pattern-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+
+    .pattern-card:hover {
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    }
+
     .pattern-card-top {
       display: flex;
       align-items: flex-start;
@@ -67,6 +81,7 @@
       gap: 12px;
       margin-bottom: 14px;
     }
+
     .pattern-title {
       font-size: 15px;
       font-weight: 700;
@@ -75,6 +90,7 @@
       align-items: center;
       gap: 9px;
     }
+
     .pattern-badge {
       display: inline-flex;
       align-items: center;
@@ -83,19 +99,25 @@
       font-size: 11.5px;
       font-weight: 700;
     }
+
     .pattern-description {
       font-size: 13.5px;
       color: var(--text-secondary);
       line-height: 1.6;
       margin-bottom: 14px;
     }
+
     .pattern-stats {
       display: flex;
       gap: 24px;
       flex-wrap: wrap;
       margin-bottom: 14px;
     }
-    .pattern-stat { font-size: 12.5px; }
+
+    .pattern-stat {
+      font-size: 12.5px;
+    }
+
     .pattern-stat .k {
       font-size: 11px;
       color: var(--text-tertiary);
@@ -103,7 +125,12 @@
       letter-spacing: 0.04em;
       margin-bottom: 3px;
     }
-    .pattern-stat .v { font-weight: 700; color: var(--text); }
+
+    .pattern-stat .v {
+      font-weight: 700;
+      color: var(--text);
+    }
+
     .confidence-bar-track {
       height: 4px;
       background: var(--border-soft);
@@ -111,17 +138,20 @@
       overflow: hidden;
       flex: 1;
     }
+
     .confidence-bar-fill {
       height: 100%;
       border-radius: 99px;
       transition: width 0.5s ease;
     }
+
     .confidence-row {
       display: flex;
       align-items: center;
       gap: 10px;
       margin-bottom: 14px;
     }
+
     .confidence-label {
       font-size: 11px;
       color: var(--text-tertiary);
@@ -129,6 +159,7 @@
       text-transform: uppercase;
       letter-spacing: 0.04em;
     }
+
     .confidence-pct {
       font-size: 12px;
       font-weight: 700;
@@ -143,6 +174,7 @@
       padding: 18px 20px;
       background: var(--card-bg);
     }
+
     .learning-progress-row {
       display: flex;
       align-items: center;
@@ -152,399 +184,547 @@
 
     /* AI Summary Modal */
     .modal-overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.35);
-      display: flex; align-items: center; justify-content: center;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       z-index: 9999;
-      opacity: 0; visibility: hidden;
+      opacity: 0;
+      visibility: hidden;
       transition: opacity 0.2s, visibility 0.2s;
     }
-    .modal-overlay.open { opacity: 1; visibility: visible; }
+
+    .modal-overlay.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
     .modal-box {
       background: #fff;
       border-radius: 16px;
       padding: 32px;
       max-width: 520px;
       width: 90%;
-      box-shadow: 0 16px 60px rgba(0,0,0,0.12);
+      box-shadow: 0 16px 60px rgba(0, 0, 0, 0.12);
       transform: translateY(8px);
       transition: transform 0.2s;
     }
-    .modal-overlay.open .modal-box { transform: translateY(0); }
+
+    .modal-overlay.open .modal-box {
+      transform: translateY(0);
+    }
+
     .modal-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
       margin-bottom: 18px;
     }
+
     .modal-title {
       font-size: 16px;
       font-weight: 800;
       color: var(--text);
-      display: flex; align-items: center; gap: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
+
     .modal-close {
-      background: none; border: none; cursor: pointer;
-      color: var(--text-tertiary); padding: 4px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-tertiary);
+      padding: 4px;
       border-radius: 6px;
       transition: color 0.15s, background 0.15s;
     }
-    .modal-close:hover { background: var(--border-soft); color: var(--text); }
-    .modal-body { font-size: 14px; line-height: 1.75; color: var(--text-secondary); }
-    .modal-body p { margin-bottom: 12px; }
-    .modal-body strong { color: var(--text); }
-    .modal-footer { margin-top: 22px; display: flex; gap: 10px; justify-content: flex-end; }
+
+    .modal-close:hover {
+      background: var(--border-soft);
+      color: var(--text);
+    }
+
+    .modal-body {
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--text-secondary);
+    }
+
+    .modal-body p {
+      margin-bottom: 12px;
+    }
+
+    .modal-body strong {
+      color: var(--text);
+    }
+
+    .modal-footer {
+      margin-top: 22px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
 
     /* Spinner animation */
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .spinner { animation: spin 0.8s linear infinite; }
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .spinner {
+      animation: spin 0.8s linear infinite;
+    }
   </style>
 </head>
+
 <body class="patterns-page">
 
-<div class="app">
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div class="app">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <!-- SIDEBAR NAVIGATION -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <span class="brand-dot"></span> AIRGUARD
-    </div>
-    <nav class="sidebar-nav">
-      <a href="dashboard.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.4"/><rect x="14" y="3" width="7" height="7" rx="1.4"/><rect x="3" y="14" width="7" height="7" rx="1.4"/><rect x="14" y="14" width="7" height="7" rx="1.4"/></svg>
-        Overview
-      </a>
-      <a href="checkin.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.4 2.4L16 9.5"/></svg>
-        Check-in
-      </a>
-      <a href="patterns.html" class="nav-link active">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 6h6v6"/></svg>
-        Patterns
-      </a>
-      <a href="timeline.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
-        Timeline
-      </a>
-      <a href="environment.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a13 13 0 0 1 0 18 13 13 0 0 1 0-18Z"/></svg>
-        Environment
-      </a>
-      <a href="activity.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 8-6-16-3 8H2"/></svg>
-        Activity
-      </a>
-      <a href="weekly-insights.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        Weekly Insights
-      </a>
-      <a href="ai.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
-        AirGuard AI
-      </a>
-    </nav>
-    <div class="sidebar-bottom">
-      <a href="settings.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.88.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06A2 2 0 1 1 19.83 7l-.06.06a1.7 1.7 0 0 0-.34 1.88v.01a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg>
-        Settings
-      </a>
-    </div>
-  </aside>
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-dot"></span> AIRGUARD
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1.4" />
+            <rect x="14" y="3" width="7" height="7" rx="1.4" />
+            <rect x="3" y="14" width="7" height="7" rx="1.4" />
+            <rect x="14" y="14" width="7" height="7" rx="1.4" />
+          </svg>
+          Overview
+        </a>
+        <a href="checkin.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="m8.5 12.5 2.4 2.4L16 9.5" />
+          </svg>
+          Check-in
+        </a>
+        <a href="patterns.html" class="nav-link active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 17 6-6 4 4 8-8" />
+            <path d="M15 6h6v6" />
+          </svg>
+          Patterns
+        </a>
+        <a href="timeline.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M12 7.5V12l3 2" />
+          </svg>
+          Timeline
+        </a>
+        <a href="environment.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18M12 3a13 13 0 0 1 0 18 13 13 0 0 1 0-18Z" />
+          </svg>
+          Environment
+        </a>
+        <a href="activity.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 8-6-16-3 8H2" />
+          </svg>
+          Activity
+        </a>
+        <a href="weekly-insights.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" />
+          </svg>
+          Weekly Insights
+        </a>
+        <a href="ai.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" />
+          </svg>
+          AirGuard AI
+        </a>
+      </nav>
+      <div class="sidebar-bottom">
+        <a href="settings.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+            <path
+              d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.88.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06A2 2 0 1 1 19.83 7l-.06.06a1.7 1.7 0 0 0-.34 1.88v.01a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z" />
+          </svg>
+          Settings
+        </a>
+      </div>
+    </aside>
 
-  <!-- MAIN -->
-  <div class="main-content-wrap">
-    <div class="topbar-mobile">
-      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-      </button>
-      <div class="sidebar-brand" style="padding:0; color:var(--text);"><span class="brand-dot"></span> AIRGUARD</div>
-    </div>
-
-    <main class="main-viewport fade-in">
-
-      <!-- PAGE HEADER -->
-      <div class="page-header-row calm-page-header" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;" data-reveal>
-        <div>
-          <h1 class="page-title">My Patterns</h1>
-          <p class="page-subtitle">A gentle look at the repeats in your check-ins and local conditions.</p>
-        </div>
-        <div style="display:flex; align-items:center; gap:10px;">
-          <div class="timeline-controls" style="margin-bottom:0;">
-            <button class="toggle-btn" data-days="7">7 days</button>
-            <button class="toggle-btn active" data-days="30">30 days</button>
-            <button class="toggle-btn" data-days="90">90 days</button>
-          </div>
-          <button class="btn btn-dark btn-sm" id="aiSummariseBtn" style="display:flex; align-items:center; gap:7px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
-            Summarise with AI
-          </button>
-        </div>
+    <!-- MAIN -->
+    <div class="main-content-wrap">
+      <div class="topbar-mobile">
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round">
+            <path d="M3 6h18M3 12h18M3 18h18" />
+          </svg>
+        </button>
+        <div class="sidebar-brand" style="padding:0; color:var(--text);"><span class="brand-dot"></span> AIRGUARD</div>
       </div>
 
-      <!-- AI SNAPSHOT -->
-      <div class="ai-summary-card" data-reveal>
-        <div class="ai-summary-header">
-          <div class="ai-summary-label">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
-            Your week in a few words
-          </div>
-          <button class="btn btn-outline btn-sm" id="refreshSummaryBtn" style="font-size:12px; padding:5px 12px;">Refresh</button>
-        </div>
-        <div class="ai-summary-body">
-          Over the past 30 days, your wellness scores dip most on days when <strong>humidity exceeds 70%</strong> — this is the single strongest pattern in your data. High <strong>AQI days (above 120)</strong> consistently coincide with congestion reports. On hot days when you also spent time outdoors, your comfort score dropped by an average of <strong>1.8 points</strong>. Your best-feeling days tend to share clear skies, AQI below 80, and morning movement.
-        </div>
-        <div class="ai-refresh-row" style="margin-top:12px; font-size:12.5px; color:var(--text-tertiary); display:flex; align-items:center; gap:6px;">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-          Last generated: Today, 7:30 AM
-        </div>
-      </div>
+      <main class="main-viewport fade-in">
 
-      <!-- CONFIRMED PATTERNS -->
-      <h2 class="section-heading" style="margin-bottom:14px;" data-reveal>Things AIRGUARD is starting to notice</h2>
-      <p class="secondary-text" style="margin-bottom:18px; font-size:13px;">As you add check-ins, AIRGUARD looks for gentle repeats between conditions and how you felt.</p>
-
-      <!-- PATTERN 1 -->
-      <div class="pattern-card">
-        <div class="pattern-card-top">
-          <div class="pattern-title">
-            <span style="width:10px; height:10px; border-radius:50%; background:var(--purple); display:inline-block; flex-shrink:0;"></span>
-            High humidity leads to lower energy
+        <!-- PAGE HEADER -->
+        <div class="page-header-row calm-page-header"
+          style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;"
+          data-reveal>
+          <div>
+            <h1 class="page-title">My Patterns</h1>
+            <p class="page-subtitle">A gentle look at the repeats in your check-ins and local conditions.</p>
           </div>
-          <span class="pattern-badge" style="background:var(--purple-bg); color:var(--purple-fg);">Moderate signal</span>
-        </div>
-        <p class="pattern-description">On days when humidity is above 70%, your energy score drops below your average of 6.4/10. This may be due to heat stress affecting sleep quality the night before.</p>
-        <div class="pattern-stats">
-          <div class="pattern-stat">
-            <div class="k">Matched days</div>
-            <div class="v">8 of 11</div>
-          </div>
-          <div class="pattern-stat">
-            <div class="k">Avg energy on those days</div>
-            <div class="v">5.1 / 10</div>
-          </div>
-          <div class="pattern-stat">
-            <div class="k">Your energy baseline</div>
-            <div class="v">6.4 / 10</div>
-          </div>
-        </div>
-        <div class="confidence-row">
-          <span class="confidence-label">Confidence</span>
-          <div class="confidence-bar-track">
-            <div class="confidence-bar-fill" style="width:73%; background:var(--purple);"></div>
-          </div>
-          <span class="confidence-pct">73%</span>
-        </div>
-        <a href="pattern-detail.html?p=humidity" class="btn btn-outline btn-sm" style="font-size:12.5px;">View all matching days →</a>
-      </div>
-
-      <!-- PATTERN 2 -->
-      <div class="pattern-card">
-        <div class="pattern-card-top">
-          <div class="pattern-title">
-            <span style="width:10px; height:10px; border-radius:50%; background:var(--blue); display:inline-block; flex-shrink:0;"></span>
-            High AQI increases congestion reports
-          </div>
-          <span class="pattern-badge" style="background:var(--blue-bg); color:var(--blue-fg);">Moderate signal</span>
-        </div>
-        <p class="pattern-description">When the Air Quality Index exceeds 120, you are significantly more likely to log congestion as a symptom. This matches general respiratory sensitivity data for Jaipur's summer months.</p>
-        <div class="pattern-stats">
-          <div class="pattern-stat">
-            <div class="k">Matched days</div>
-            <div class="v">6 of 9</div>
-          </div>
-          <div class="pattern-stat">
-            <div class="k">Symptom frequency (high AQI)</div>
-            <div class="v">67%</div>
-          </div>
-          <div class="pattern-stat">
-            <div class="k">Symptom frequency (low AQI)</div>
-            <div class="v">11%</div>
-          </div>
-        </div>
-        <div class="confidence-row">
-          <span class="confidence-label">Confidence</span>
-          <div class="confidence-bar-track">
-            <div class="confidence-bar-fill" style="width:67%; background:var(--blue);"></div>
-          </div>
-          <span class="confidence-pct">67%</span>
-        </div>
-        <a href="pattern-detail.html?p=aqi" class="btn btn-outline btn-sm" style="font-size:12.5px;">View all matching days →</a>
-      </div>
-
-      <!-- PATTERN 3 -->
-      <div class="pattern-card">
-        <div class="pattern-card-top">
-          <div class="pattern-title">
-            <span style="width:10px; height:10px; border-radius:50%; background:var(--red); display:inline-block; flex-shrink:0;"></span>
-            Heat + outdoor activity reduces comfort
-          </div>
-          <span class="pattern-badge" style="background:var(--red-bg); color:var(--red-fg);">Early signal</span>
-        </div>
-        <p class="pattern-description">Combining temperatures above 33°C with more than 30 minutes of outdoor time is followed by a comfort score drop. The pattern is clearest in the afternoon hours (12 pm–4 pm).</p>
-        <div class="pattern-stats">
-          <div class="pattern-stat">
-            <div class="k">Matched days</div>
-            <div class="v">5 of 7</div>
-          </div>
-          <div class="pattern-stat">
-            <div class="k">Avg comfort drop</div>
-            <div class="v">−1.8 pts</div>
-          </div>
-        </div>
-        <div class="confidence-row">
-          <span class="confidence-label">Confidence</span>
-          <div class="confidence-bar-track">
-            <div class="confidence-bar-fill" style="width:71%; background:var(--red);"></div>
-          </div>
-          <span class="confidence-pct">71%</span>
-        </div>
-        <a href="pattern-detail.html?p=temp" class="btn btn-outline btn-sm" style="font-size:12.5px;">View all matching days →</a>
-      </div>
-
-      <!-- PATTERN 4 -->
-      <div class="pattern-card">
-        <div class="pattern-card-top">
-          <div class="pattern-title">
-            <span style="width:10px; height:10px; border-radius:50%; background:var(--amber); display:inline-block; flex-shrink:0;"></span>
-            Peak UV correlates with eye fatigue
-          </div>
-          <span class="pattern-badge" style="background:var(--amber-bg); color:var(--amber-fg);">Early signal</span>
-        </div>
-        <p class="pattern-description">On days with a UV index of 8 or higher, you reported eye discomfort or general fatigue in 4 out of 5 matching entries. Sunglasses and shorter midday exposure may help.</p>
-        <div class="pattern-stats">
-          <div class="pattern-stat">
-            <div class="k">Matched days</div>
-            <div class="v">4 of 5</div>
-          </div>
-          <div class="pattern-stat">
-            <div class="k">Confidence</div>
-            <div class="v">80%</div>
-          </div>
-        </div>
-        <div class="confidence-row">
-          <span class="confidence-label">Confidence</span>
-          <div class="confidence-bar-track">
-            <div class="confidence-bar-fill" style="width:80%; background:var(--amber);"></div>
-          </div>
-          <span class="confidence-pct">80%</span>
-        </div>
-        <a href="pattern-detail.html?p=uv" class="btn btn-outline btn-sm" style="font-size:12.5px;">View all matching days →</a>
-      </div>
-
-      <div class="divider-space"></div>
-
-      <!-- STILL LEARNING -->
-      <h2 class="section-heading" style="margin-bottom:6px;">Still building a picture</h2>
-      <p class="secondary-text" style="margin-bottom:16px; font-size:13px;">These hypotheses need a few more data points before AIRGUARD can confirm them.</p>
-
-      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px;">
-        <div class="learning-card">
-          <div style="font-size:13.5px; font-weight:700; color:var(--text);">Barometric pressure shifts → headaches</div>
-          <p class="secondary-text" style="margin-top:6px; font-size:12.5px; line-height:1.6;">Needs 3 more check-ins during rapid pressure changes to reach statistical significance.</p>
-          <div class="learning-progress-row">
-            <div class="confidence-bar-track">
-              <div class="confidence-bar-fill" style="width:40%; background:var(--text-tertiary);"></div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="timeline-controls" style="margin-bottom:0;">
+              <button class="toggle-btn" data-days="7">7 days</button>
+              <button class="toggle-btn active" data-days="30">30 days</button>
+              <button class="toggle-btn" data-days="90">90 days</button>
             </div>
-            <span style="font-size:11.5px; font-weight:700; color:var(--text-tertiary);">2 of 5 days</span>
+            <button class="btn btn-dark btn-sm" id="aiSummariseBtn" style="display:flex; align-items:center; gap:7px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" />
+              </svg>
+              Summarise with AI
+            </button>
           </div>
         </div>
-        <div class="learning-card">
-          <div style="font-size:13.5px; font-weight:700; color:var(--text);">Pollen spikes → sleep fragmentation</div>
-          <p class="secondary-text" style="margin-top:6px; font-size:12.5px; line-height:1.6;">Observing whether high-pollen days coincide with lighter, more broken sleep.</p>
-          <div class="learning-progress-row">
-            <div class="confidence-bar-track">
-              <div class="confidence-bar-fill" style="width:60%; background:var(--text-tertiary);"></div>
+
+        <!-- AI SNAPSHOT -->
+        <div class="ai-summary-card" data-reveal>
+          <div class="ai-summary-header">
+            <div class="ai-summary-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" />
+              </svg>
+              Your week in a few words
             </div>
-            <span style="font-size:11.5px; font-weight:700; color:var(--text-tertiary);">3 of 5 days</span>
+
+          </div>
+          <div class="ai-summary-body">
+            Over the past 30 days, your wellness scores dip most on days when <strong>humidity exceeds 70%</strong> —
+            this is the single strongest pattern in your data. High <strong>AQI days (above 120)</strong> consistently
+            coincide with congestion reports. On hot days when you also spent time outdoors, your comfort score dropped
+            by an average of <strong>1.8 points</strong>. Your best-feeling days tend to share clear skies, AQI below
+            80, and morning movement.
+          </div>
+          <div class="ai-refresh-row"
+            style="margin-top:12px; font-size:12.5px; color:var(--text-tertiary); display:flex; align-items:center; gap:6px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 7v5l3 2" />
+            </svg>
+            Last generated: Today, 7:30 AM
           </div>
         </div>
-      </div>
 
-      <div class="disclaimer-box" style="margin-top:22px;">
-        AIRGUARD is a personal data discovery tool, not a medical dashboard. All findings reflect statistical associations in your own logged records and do not establish clinical causation.
-      </div>
+        <!-- CONFIRMED PATTERNS -->
+        <h2 class="section-heading" style="margin-bottom:14px;" data-reveal>Things AIRGUARD is starting to notice</h2>
+        <p class="secondary-text" style="margin-bottom:18px; font-size:13px;">As you add check-ins, AIRGUARD looks for
+          gentle repeats between conditions and how you felt.</p>
 
-    </main>
+        <!-- PATTERN 1 -->
+        <div class="pattern-card">
+          <div class="pattern-card-top">
+            <div class="pattern-title">
+              <span
+                style="width:10px; height:10px; border-radius:50%; background:var(--purple); display:inline-block; flex-shrink:0;"></span>
+              High humidity leads to lower energy
+            </div>
+            <span class="pattern-badge" style="background:var(--purple-bg); color:var(--purple-fg);">Moderate
+              signal</span>
+          </div>
+          <p class="pattern-description">On days when humidity is above 70%, your energy score drops below your average
+            of 6.4/10. This may be due to heat stress affecting sleep quality the night before.</p>
+          <div class="pattern-stats">
+            <div class="pattern-stat">
+              <div class="k">Matched days</div>
+              <div class="v">8 of 11</div>
+            </div>
+            <div class="pattern-stat">
+              <div class="k">Avg energy on those days</div>
+              <div class="v">5.1 / 10</div>
+            </div>
+            <div class="pattern-stat">
+              <div class="k">Your energy baseline</div>
+              <div class="v">6.4 / 10</div>
+            </div>
+          </div>
+          <div class="confidence-row">
+            <span class="confidence-label">Confidence</span>
+            <div class="confidence-bar-track">
+              <div class="confidence-bar-fill" style="width:73%; background:var(--purple);"></div>
+            </div>
+            <span class="confidence-pct">73%</span>
+          </div>
+          <a href="pattern-detail.html?p=humidity" class="btn btn-outline btn-sm" style="font-size:12.5px;">View all
+            matching days →</a>
+        </div>
+
+        <!-- PATTERN 2 -->
+        <div class="pattern-card">
+          <div class="pattern-card-top">
+            <div class="pattern-title">
+              <span
+                style="width:10px; height:10px; border-radius:50%; background:var(--blue); display:inline-block; flex-shrink:0;"></span>
+              High AQI increases congestion reports
+            </div>
+            <span class="pattern-badge" style="background:var(--blue-bg); color:var(--blue-fg);">Moderate signal</span>
+          </div>
+          <p class="pattern-description">When the Air Quality Index exceeds 120, you are significantly more likely to
+            log congestion as a symptom. This matches general respiratory sensitivity data for Jaipur's summer months.
+          </p>
+          <div class="pattern-stats">
+            <div class="pattern-stat">
+              <div class="k">Matched days</div>
+              <div class="v">6 of 9</div>
+            </div>
+            <div class="pattern-stat">
+              <div class="k">Symptom frequency (high AQI)</div>
+              <div class="v">67%</div>
+            </div>
+            <div class="pattern-stat">
+              <div class="k">Symptom frequency (low AQI)</div>
+              <div class="v">11%</div>
+            </div>
+          </div>
+          <div class="confidence-row">
+            <span class="confidence-label">Confidence</span>
+            <div class="confidence-bar-track">
+              <div class="confidence-bar-fill" style="width:67%; background:var(--blue);"></div>
+            </div>
+            <span class="confidence-pct">67%</span>
+          </div>
+          <a href="pattern-detail.html?p=aqi" class="btn btn-outline btn-sm" style="font-size:12.5px;">View all matching
+            days →</a>
+        </div>
+
+        <!-- PATTERN 3 -->
+        <div class="pattern-card">
+          <div class="pattern-card-top">
+            <div class="pattern-title">
+              <span
+                style="width:10px; height:10px; border-radius:50%; background:var(--red); display:inline-block; flex-shrink:0;"></span>
+              Heat + outdoor activity reduces comfort
+            </div>
+            <span class="pattern-badge" style="background:var(--red-bg); color:var(--red-fg);">Early signal</span>
+          </div>
+          <p class="pattern-description">Combining temperatures above 33°C with more than 30 minutes of outdoor time is
+            followed by a comfort score drop. The pattern is clearest in the afternoon hours (12 pm–4 pm).</p>
+          <div class="pattern-stats">
+            <div class="pattern-stat">
+              <div class="k">Matched days</div>
+              <div class="v">5 of 7</div>
+            </div>
+            <div class="pattern-stat">
+              <div class="k">Avg comfort drop</div>
+              <div class="v">−1.8 pts</div>
+            </div>
+          </div>
+          <div class="confidence-row">
+            <span class="confidence-label">Confidence</span>
+            <div class="confidence-bar-track">
+              <div class="confidence-bar-fill" style="width:71%; background:var(--red);"></div>
+            </div>
+            <span class="confidence-pct">71%</span>
+          </div>
+          <a href="pattern-detail.html?p=temp" class="btn btn-outline btn-sm" style="font-size:12.5px;">View all
+            matching days →</a>
+        </div>
+
+        <!-- PATTERN 4 -->
+        <div class="pattern-card">
+          <div class="pattern-card-top">
+            <div class="pattern-title">
+              <span
+                style="width:10px; height:10px; border-radius:50%; background:var(--amber); display:inline-block; flex-shrink:0;"></span>
+              Peak UV correlates with eye fatigue
+            </div>
+            <span class="pattern-badge" style="background:var(--amber-bg); color:var(--amber-fg);">Early signal</span>
+          </div>
+          <p class="pattern-description">On days with a UV index of 8 or higher, you reported eye discomfort or general
+            fatigue in 4 out of 5 matching entries. Sunglasses and shorter midday exposure may help.</p>
+          <div class="pattern-stats">
+            <div class="pattern-stat">
+              <div class="k">Matched days</div>
+              <div class="v">4 of 5</div>
+            </div>
+            <div class="pattern-stat">
+              <div class="k">Confidence</div>
+              <div class="v">80%</div>
+            </div>
+          </div>
+          <div class="confidence-row">
+            <span class="confidence-label">Confidence</span>
+            <div class="confidence-bar-track">
+              <div class="confidence-bar-fill" style="width:80%; background:var(--amber);"></div>
+            </div>
+            <span class="confidence-pct">80%</span>
+          </div>
+          <a href="pattern-detail.html?p=uv" class="btn btn-outline btn-sm" style="font-size:12.5px;">View all matching
+            days →</a>
+        </div>
+
+        <div class="divider-space"></div>
+
+        <!-- STILL LEARNING -->
+        <h2 class="section-heading" style="margin-bottom:6px;">Still building a picture</h2>
+        <p class="secondary-text" style="margin-bottom:16px; font-size:13px;">These hypotheses need a few more data
+          points before AIRGUARD can confirm them.</p>
+
+        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px;">
+          <div class="learning-card">
+            <div style="font-size:13.5px; font-weight:700; color:var(--text);">Barometric pressure shifts → headaches
+            </div>
+            <p class="secondary-text" style="margin-top:6px; font-size:12.5px; line-height:1.6;">Needs 3 more check-ins
+              during rapid pressure changes to reach statistical significance.</p>
+            <div class="learning-progress-row">
+              <div class="confidence-bar-track">
+                <div class="confidence-bar-fill" style="width:40%; background:var(--text-tertiary);"></div>
+              </div>
+              <span style="font-size:11.5px; font-weight:700; color:var(--text-tertiary);">2 of 5 days</span>
+            </div>
+          </div>
+          <div class="learning-card">
+            <div style="font-size:13.5px; font-weight:700; color:var(--text);">Pollen spikes → sleep fragmentation</div>
+            <p class="secondary-text" style="margin-top:6px; font-size:12.5px; line-height:1.6;">Observing whether
+              high-pollen days coincide with lighter, more broken sleep.</p>
+            <div class="learning-progress-row">
+              <div class="confidence-bar-track">
+                <div class="confidence-bar-fill" style="width:60%; background:var(--text-tertiary);"></div>
+              </div>
+              <span style="font-size:11.5px; font-weight:700; color:var(--text-tertiary);">3 of 5 days</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="disclaimer-box" style="margin-top:22px;">
+          AIRGUARD is a personal data discovery tool, not a medical dashboard. All findings reflect statistical
+          associations in your own logged records and do not establish clinical causation.
+        </div>
+
+      </main>
+    </div>
   </div>
-</div>
 
-<!-- AI SUMMARY MODAL -->
-<div class="modal-overlay" id="aiSummaryModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-  <div class="modal-box">
-    <div class="modal-top">
-      <div class="modal-title" id="modalTitle">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
-        Full AI Pattern Summary
+  <!-- AI SUMMARY MODAL -->
+  <div class="modal-overlay" id="aiSummaryModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-box">
+      <div class="modal-top">
+        <div class="modal-title" id="modalTitle">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" />
+          </svg>
+          Full AI Pattern Summary
+        </div>
+        <button class="modal-close" id="modalCloseBtn" aria-label="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
       </div>
-      <button class="modal-close" id="modalCloseBtn" aria-label="Close">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-      </button>
-    </div>
-    <div class="modal-body" id="modalBody">
-      <p id="modalLoading" style="display:flex; align-items:center; gap:8px; color:var(--text-tertiary);">
-        <svg class="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.2-8.6"/></svg>
-        Generating your personalised summary…
-      </p>
-      <div id="modalContent" style="display:none;">
-        <p><strong>Humidity is your biggest environmental stressor.</strong> On 8 out of 11 days where humidity exceeded 70%, your energy score dropped below your 30-day average of 6.4/10. This is the strongest repeating pattern in your data.</p>
-        <p><strong>Air quality shapes your physical symptoms.</strong> The correlation between AQI above 120 and congestion reports is the second most consistent signal — you are 6x more likely to report nasal symptoms on those days.</p>
-        <p><strong>Outdoor activity in the heat is a compounding factor.</strong> Neither heat nor outdoor time alone consistently lowers your comfort scores, but the combination reliably does. Consider scheduling outdoor activity before 11 AM or after 5 PM.</p>
-        <p><strong>Your best days share a common profile:</strong> AQI below 80, temperature under 30°C, humidity under 60%, and at least 30 min of morning movement.</p>
+      <div class="modal-body" id="modalBody">
+        <p id="modalLoading" style="display:flex; align-items:center; gap:8px; color:var(--text-tertiary);">
+          <svg class="spinner" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round">
+            <path d="M21 12a9 9 0 1 1-6.2-8.6" />
+          </svg>
+          Generating your personalised summary…
+        </p>
+        <div id="modalContent" style="display:none;">
+          <p><strong>Humidity is your biggest environmental stressor.</strong> On 8 out of 11 days where humidity
+            exceeded 70%, your energy score dropped below your 30-day average of 6.4/10. This is the strongest repeating
+            pattern in your data.</p>
+          <p><strong>Air quality shapes your physical symptoms.</strong> The correlation between AQI above 120 and
+            congestion reports is the second most consistent signal — you are 6x more likely to report nasal symptoms on
+            those days.</p>
+          <p><strong>Outdoor activity in the heat is a compounding factor.</strong> Neither heat nor outdoor time alone
+            consistently lowers your comfort scores, but the combination reliably does. Consider scheduling outdoor
+            activity before 11 AM or after 5 PM.</p>
+          <p><strong>Your best days share a common profile:</strong> AQI below 80, temperature under 30°C, humidity
+            under 60%, and at least 30 min of morning movement.</p>
+        </div>
       </div>
-    </div>
-    <div class="modal-footer">
-      <a href="ai.html" class="btn btn-outline btn-sm">Ask AI a follow-up question →</a>
-      <button class="btn btn-dark btn-sm" id="modalCloseBtnAlt">Done</button>
+      <div class="modal-footer">
+        <a href="ai.html" class="btn btn-outline btn-sm">Ask AI a follow-up question →</a>
+        <button class="btn btn-dark btn-sm" id="modalCloseBtnAlt">Done</button>
+      </div>
     </div>
   </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
-<script src="js/firebase.js"></script>
-<script src="js/main.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  // Range filter
-  document.querySelectorAll('[data-days]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-days]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      if (window.AIRGUARD) window.AIRGUARD.showToast(`Showing patterns for last ${btn.dataset.days} days`);
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Range filter
+      document.querySelectorAll('[data-days]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('[data-days]').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          if (window.AIRGUARD) window.AIRGUARD.showToast(`Showing patterns for last ${btn.dataset.days} days`);
+        });
+      });
+
+      // Refresh summary
+      document.getElementById('refreshSummaryBtn').addEventListener('click', () => {
+        if (window.AIRGUARD) window.AIRGUARD.showToast('Summary refreshed');
+      });
+
+      // Open AI modal
+      const modal = document.getElementById('aiSummaryModal');
+      const loading = document.getElementById('modalLoading');
+      const content = document.getElementById('modalContent');
+
+      function openModal() {
+        modal.classList.add('open');
+        loading.style.display = 'flex';
+        content.style.display = 'none';
+        // Simulate AI generation delay
+        setTimeout(() => {
+          loading.style.display = 'none';
+          content.style.display = 'block';
+        }, 1400);
+      }
+      function closeModal() { modal.classList.remove('open'); }
+
+      document.getElementById('aiSummariseBtn').addEventListener('click', openModal);
+      document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+      document.getElementById('modalCloseBtnAlt').addEventListener('click', closeModal);
+      modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
     });
-  });
-
-  // Refresh summary
-  document.getElementById('refreshSummaryBtn').addEventListener('click', () => {
-    if (window.AIRGUARD) window.AIRGUARD.showToast('Summary refreshed');
-  });
-
-  // Open AI modal
-  const modal = document.getElementById('aiSummaryModal');
-  const loading = document.getElementById('modalLoading');
-  const content = document.getElementById('modalContent');
-
-  function openModal() {
-    modal.classList.add('open');
-    loading.style.display = 'flex';
-    content.style.display = 'none';
-    // Simulate AI generation delay
-    setTimeout(() => {
-      loading.style.display = 'none';
-      content.style.display = 'block';
-    }, 1400);
-  }
-  function closeModal() { modal.classList.remove('open'); }
-
-  document.getElementById('aiSummariseBtn').addEventListener('click', openModal);
-  document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
-  document.getElementById('modalCloseBtnAlt').addEventListener('click', closeModal);
-  modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
-});
-</script>
+  </script>
 </body>
+
 </html>
