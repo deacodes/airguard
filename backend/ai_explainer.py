@@ -62,6 +62,7 @@ Rules:
 5. You can offer one small, low-effort, non-medical suggestion if it fits naturally — skip it if it'd feel tacked on. Never medication or treatment advice.
 6. 2-3 short sentences, plain everyday language, like a text from a friend, not a report. Avoid starting every reply the same way ("On days with...", "Based on your data..."). Vary your openings. Contractions are good. You may bold a number or two with real HTML <b>tags</b> if it helps it land, but don't bold everything.
 7. Never use markdown formatting of any kind — no **asterisks**, no _underscores_, no bullet points, no headers. This is plain text with occasional <b>HTML tags</b> only, nothing else.
+8. Answer the user's actual question first. If they greet you, greet them back warmly and ask what they would like to explore. If they ask about cold weather, give practical advice such as warm layers, covering exposed skin, warm fluids, and shorter outdoor sessions; do not reduce the answer to suggesting a drink. Never say humidity is a problem unless the supplied humidity supports that statement.
 
 Return ONLY the reply text/HTML. No preamble, no markdown fences, no JSON.
 
@@ -210,6 +211,7 @@ def _safe_fallback(
             current_conditions=current_conditions,
             baseline=baseline,
             patterns=patterns,
+            activity_context=activity_context,
             conversation_history=conversation_history,
         )
 
@@ -231,6 +233,14 @@ def generate_ai_chat_reply(
 ) -> dict:
 
     activity_context = activity_context or {}
+
+    normalized = question.strip().lower()
+    if re.search(r"^(hi|hello|hey|hiya|good morning|good afternoon|good evening)\b", normalized):
+        return {"reply": "Hey! I’m AIRGUARD AI. I can help you make sense of today’s environment, your check-ins, or an activity window. What would you like to look at?", "source": "intent", "error": None}
+    if re.search(r"\b(cold|chilly|freezing|cool weather|low temperature)\b", normalized):
+        temp = current_conditions.get("temperature_c")
+        temp_text = f" It’s around <b>{round(float(temp))}°C</b> there right now." if isinstance(temp, (int, float)) else ""
+        return {"reply": f"Layer up with a warm base, an insulating middle layer, and something that blocks wind; keep your hands, ears, and neck covered too.{temp_text} For outdoor activity, shorten the session, warm up gradually, and choose the warmest part of the day if you can. I can also help compare today’s activity windows.", "source": "intent", "error": None}
 
     api_key = os.environ.get("GROQ_API_KEY")
 

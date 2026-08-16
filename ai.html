@@ -185,18 +185,47 @@ document.addEventListener('DOMContentLoaded', () => {
   function getAIReplyFallback(text) {
     const q = text.toLowerCase();
     if (q.includes('flag') || q.includes('why')) {
-      return "Today was flagged because your ambient humidity is <b>72% (+28% vs your 56% baseline)</b> and AQI is <b>128 (+39% vs baseline)</b>. Across your 30-day history, on 8 of 11 matching days you reported physical energy below 5.5/10.";
+      return "Good question. I’m comparing today’s environmental readings with the personal check-ins you’ve saved. I’ll call out the strongest differences I can actually support, and I’ll keep the explanation observational rather than diagnostic.";
     }
     if (q.includes('comfort') || q.includes('affect') || q.includes('most')) {
-      return "Your strongest observed correlation is <b>High Humidity (>65%) + Temperature (>33°C)</b>. This combo accounts for 73% of your lower-comfort check-ins. High AQI alone primarily triggers nasal congestion rather than bodily fatigue.";
+      return "Let’s look at your comfort entries alongside temperature, humidity, AQI, sleep, and activity context. The most useful answer will come from repeated combinations in your own records—not from a generic population assumption.";
     }
     if (q.includes('yesterday') || q.includes('compare')) {
-      return "Yesterday in Jaipur was <b>31.9°C with 68% humidity</b>, and you reported 6.7 comfort. Today temperature increased by <b>+2.1°C</b> and AQI jumped by <b>+12 points</b>. Your sleep last night (6h 14m) was also 48 minutes shorter than yesterday.";
+      return "I can compare today with your recent entries using the environmental snapshots and check-ins you’ve saved. If a value is missing, I’ll say so instead of filling it in.";
     }
     if (q.includes('run') || q.includes('workout') || q.includes('time') || q.includes('schedule')) {
-      return "The optimal window for outdoor activity today is <b>6:30 PM</b>. Temperature will cool from 35°C down to <b>28°C</b>, and AQI will improve to <b>94</b>, matching the conditions from your most comfortable outdoor sessions.";
+      return "I can help you compare the available activity windows. I’ll use the live temperature, humidity, and AQI forecast, then relate the choice to your saved activity context.";
     }
-    return "Based on your 30-day baseline in Jaipur, environmental load is currently higher than normal. Protecting a 60-minute recovery window in the cooler evening (after 6:30 PM) is the most effective micro-adjustment for today.";
+    return "I’m here with you. Ask me about today’s conditions, a check-in, sleep, comfort, energy, or an activity window, and I’ll explain what your saved data can support.";
+  }
+
+  function resourceForQuestion(text) {
+    const q = text.toLowerCase();
+    const asksToLearn = /read|article|learn|watch|video|explain|source|more about/.test(q);
+    if (!asksToLearn && !/aqi|air quality|pollution|heat|hot|humidity/.test(q)) return null;
+    if (/heat|hot|temperature|humidity/.test(q)) return {
+      label: 'Read this: heat and your health',
+      description: 'Official CDC guidance on staying cool, hydrated, and planning outdoor activity in hot conditions.',
+      url: 'https://www.cdc.gov/extreme-heat/prevention/index.html'
+    };
+    if (/aqi|air quality|pollution/.test(q)) return {
+      label: 'Read this: understanding the Air Quality Index',
+      description: 'An official EPA guide to using AQI information when planning daily activities.',
+      url: 'https://www.epa.gov/wildfire-smoke-course/communicating-air-quality-conditions-air-quality-index'
+    };
+    return {
+      label: 'Read this: ambient air pollution and health',
+      description: 'A WHO overview of air pollution and health. AIRGUARD is not a medical diagnostic tool.',
+      url: 'https://www.who.int/en/news-room/fact-sheets/detail/ambient-%28outdoor%29-air-quality-and-health'
+    };
+  }
+
+  function appendResource(message, resource) {
+    if (!resource || !message) return;
+    const card = document.createElement('div');
+    card.style.cssText = 'margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--app-bg);border:1px solid var(--border-soft);font-size:12px;';
+    card.innerHTML = `<b style="display:block;margin-bottom:3px;">${resource.label}</b><span style="display:block;color:var(--text-secondary);margin-bottom:7px;">${resource.description}</span><a href="${resource.url}" target="_blank" rel="noopener noreferrer" style="font-weight:700;color:var(--purple-fg);">Open resource →</a>`;
+    message.querySelector('.ai-bubble')?.appendChild(card);
   }
 
   async function getAIReply(text) {
@@ -263,6 +292,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const reply = await getAIReply(val);
       const pending = pendingMessage.querySelector('p');
       if (pending) pending.innerHTML = reply;
+      appendResource(pendingMessage, resourceForQuestion(val));
+      persistMessage('bot', reply);
     } catch (error) {
       const pending = pendingMessage.querySelector('p');
       if (pending) pending.textContent = 'I could not complete that request. Please try again.';

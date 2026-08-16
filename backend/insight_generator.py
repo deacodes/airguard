@@ -89,6 +89,16 @@ def generate_chat_reply(
     conversation_history=None
 ) -> str:
 
+    question = (user_question or "").strip()
+    normalized = question.lower()
+    if normalized.startswith(("hi", "hello", "hey", "hiya", "good morning", "good afternoon", "good evening")):
+        return "Hey! I’m AIRGUARD AI. I can help you understand your environment, check-ins, or activity timing. What would you like to explore?"
+
+    if any(word in normalized for word in ("cold", "chilly", "freezing", "cool weather", "low temperature")):
+        temp = (current_conditions or {}).get("temperature_c")
+        temp_text = f" It’s around {round(float(temp))}°C right now." if isinstance(temp, (int, float)) else ""
+        return "Layer up with a warm base and an insulating layer, cover your hands and neck, and keep outdoor sessions shorter while you warm up." + temp_text + " If you can, choose the warmest part of the day for longer activity."
+
     if patterns:
         return generate_pattern_summary(
             patterns,
