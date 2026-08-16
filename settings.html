@@ -228,7 +228,7 @@
           <div class="privacy-row" style="align-items:flex-start; gap:18px;">
             <div>
               <div style="font-weight:700; font-size:14px;">Populate this account with mock data</div>
-              <div class="secondary-text" style="font-size:12px; max-width:560px;">Add clearly marked sample check-ins to test graphs and pattern analysis. This data is saved to your account and can be removed with Delete Wellness History.</div>
+              <div class="secondary-text" style="font-size:12px; max-width:560px;">Add clearly marked sample check-ins and activities to explore graphs, the timeline, and pattern analysis. This data is saved to your account and can be removed with Delete Wellness History.</div>
               <div id="mockDataStatus" role="status" aria-live="polite" class="secondary-text" style="font-size:12px; margin-top:7px; min-height:16px;"></div>
             </div>
             <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
@@ -390,7 +390,7 @@
           if (populateStatus) populateStatus.textContent = 'Generating and saving sample records…';
           try {
             await window.AIRGUARD.populateMockData(total, (current, count) => { if (populateStatus) populateStatus.textContent = `Saving sample records… ${current}/${count}`; });
-            if (populateStatus) populateStatus.textContent = `Saved ${total} sample days. Your patterns have been refreshed.`;
+            if (populateStatus) populateStatus.textContent = `Saved ${total} sample days and activity plans. Your patterns have been refreshed.`;
             window.AIRGUARD.showToast('Mock data saved and pattern analysis refreshed');
           } catch (error) {
             if (populateStatus) populateStatus.textContent = error.message || 'Could not save mock data.';

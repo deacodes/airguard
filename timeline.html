@@ -148,7 +148,7 @@
     }
   </style>
 </head>
-<body>
+<body class="timeline-page">
 
 <div class="app">
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -212,10 +212,10 @@
     <main class="main-viewport fade-in">
 
       <!-- HEADER ROW -->
-      <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+      <div class="calm-page-header" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;" data-reveal>
         <div>
           <h1 class="page-title">Your Timeline</h1>
-          <p class="page-subtitle">See how your environment and wellbeing have moved together over time. Click any point on the chart to inspect that day.</p>
+          <p class="page-subtitle">Look back at how you felt, what was around you, and the small things you did—one day at a time.</p>
         </div>
         <div class="timeline-controls" style="margin-bottom:0;">
           <button class="toggle-btn" data-range="7">7 days</button>
@@ -225,22 +225,22 @@
       </div>
 
       <!-- WHAT AM I LOOKING AT? callout -->
-      <div style="background:var(--blue-bg); border:1px solid #BED7FA; border-radius:var(--radius-md); padding:14px 18px; margin-bottom:22px; display:flex; align-items:flex-start; gap:12px;">
+      <div class="timeline-gentle-note" data-reveal>
         <svg width="16" height="16" style="flex-shrink:0; margin-top:2px;" viewBox="0 0 24 24" fill="none" stroke="#2F6FEB" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
         <div style="font-size:13px; color:var(--text-secondary); line-height:1.6;">
-          <strong style="color:var(--text);">How to read this chart:</strong> The coloured lines show your personal wellness scores (Energy &amp; Comfort, scale 1–10). The dashed blue line shows the Air Quality Index (AQI, right axis). Where the AQI rises and wellness lines dip together, a pattern may be forming.
+          <strong style="color:var(--text);">Start with a day that stands out to you.</strong> Select a point to see your check-in, the environment, and your note together. The chart is here for context—not to judge your day.
         </div>
       </div>
 
       <!-- CHART + PANEL GRID -->
-      <div class="tl-grid">
+      <div class="tl-grid" data-reveal>
 
         <!-- CHART CARD -->
         <div class="card">
           <div class="chart-title-row">
             <div>
-              <h3 style="font-size:15px; font-weight:700; margin-bottom:4px;">Environment vs Wellness</h3>
-              <p class="secondary-text" style="font-size:12px;">Click a data point to see full details for that day</p>
+              <h3 style="font-size:15px; font-weight:700; margin-bottom:4px;">Your days, together</h3>
+              <p class="secondary-text" style="font-size:12px;">Select a point to open that day’s story.</p>
             </div>
             <div class="chart-legend-inline">
               <div class="legend-item">
@@ -321,10 +321,9 @@
         </div>
         </div>
 
-        <div class="card" id="timelineActivityHistory" style="margin-top:28px; padding:24px; border:1px solid var(--border); box-shadow:0 10px 28px rgba(30,24,50,.07);">
+        <div class="card" id="timelineActivityHistory" style="margin-top:28px; padding:24px; border:1px solid var(--border); box-shadow:0 10px 28px rgba(30,24,50,.07);" data-reveal>
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px;">
             <div>
-              <div class="eyebrow" style="margin-bottom:6px;font-weight:700;">Personal Activity Log</div>
               <h2 class="section-heading" style="margin:0 0 6px;">Your activity history</h2>
               <p class="secondary-text" style="margin:0;">Every activity you save appears here with its planned window and recorded conditions.</p>
             </div>

@@ -394,6 +394,43 @@
     }
     const tbody = document.getElementById('similarDaysTableBody');
     if (tbody) tbody.innerHTML = pattern.similarDays?.length ? pattern.similarDays.map(row => `<tr style="border-top:1px solid var(--border-soft);"><td style="padding:12px 8px;font-weight:700;">${row.date}</td><td style="padding:12px 8px;">${row.temp}</td><td style="padding:12px 8px;font-weight:700;color:var(--blue-fg);">${row.hum}</td><td style="padding:12px 8px;">${row.aqi}</td><td style="padding:12px 8px;font-weight:700;color:var(--purple-fg);">${row.energy}</td><td style="padding:12px 8px;">${row.comfort}</td><td style="padding:12px 8px;color:var(--text-secondary);">${row.symptoms}</td></tr>`).join('') : '<tr><td colspan="7" style="padding:16px;text-align:center;">Not enough matching records yet.</td></tr>';
+    renderPatternEvidenceChart(pattern);
+  }
+
+  function renderPatternEvidenceChart(pattern) {
+    const canvas = document.getElementById('patternDetailChart');
+    if (!canvas || !window.Chart) return;
+    const chartMap = {
+      humidity: { factor: 'humidity', factorLabel: 'Humidity (%)', impact: 'energy', impactLabel: 'Energy (1–10)', color: '#2F6FEB', impactColor: '#7C5CFC', subtitle: 'See how your reported energy changed alongside humidity in your saved history.', max: 10 },
+      temp: { factor: 'temp', factorLabel: 'Temperature (°C)', impact: 'comfort', impactLabel: 'Comfort (1–10)', color: '#E5484D', impactColor: '#17A673', subtitle: 'See how your reported comfort changed alongside temperature in your saved history.', max: 10 },
+      aqi: { factor: 'aqi', factorLabel: 'AQI', impact: 'symptomSignal', impactLabel: 'Air-related symptom reported', color: '#F5A524', impactColor: '#7C5CFC', subtitle: 'Each 1 means you recorded congestion, breathing discomfort, eye irritation, or a headache that day.', max: 1 },
+      sleep: { factor: 'sleep', factorLabel: 'Sleep (hours)', impact: 'energy', impactLabel: 'Energy (1–10)', color: '#2F6FEB', impactColor: '#7C5CFC', subtitle: 'See how your reported energy changed alongside sleep duration in your saved history.', max: 10 }
+    };
+    const config = chartMap[pattern.id] || chartMap.humidity;
+    const records = (window.AIRGUARD?.daysData || []).slice(-30);
+    const impactValue = day => config.impact === 'symptomSignal'
+      ? ((day.symptoms || []).some(item => /congestion|breathing|eye|headache/i.test(item)) ? 1 : 0)
+      : Number(day[config.impact]);
+    const title = document.getElementById('pdChartTitle');
+    const subtitle = document.getElementById('pdChartSubtitle');
+    const legendOne = document.getElementById('pdChartLegendOne');
+    const legendTwo = document.getElementById('pdChartLegendTwo');
+    if (title) title.textContent = `${config.factorLabel} vs ${config.impactLabel}`;
+    if (subtitle) subtitle.textContent = config.subtitle;
+    if (legendOne) legendOne.innerHTML = `<span class="sw" style="background:${config.color};"></span>${config.factorLabel}`;
+    if (legendTwo) legendTwo.innerHTML = `<span class="sw" style="background:${config.impactColor};"></span>${config.impactLabel}`;
+    window.Chart.getChart(canvas)?.destroy();
+    new window.Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: records.map(day => day.dateLabel),
+        datasets: [
+          { label: config.factorLabel, data: records.map(day => day[config.factor]), borderColor: config.color, backgroundColor: `${config.color}20`, borderWidth: 2.4, tension: .35, pointRadius: 3, yAxisID: 'y' },
+          { label: config.impactLabel, data: records.map(impactValue), borderColor: config.impactColor, backgroundColor: `${config.impactColor}18`, borderWidth: 2.4, tension: .35, pointRadius: 3, yAxisID: 'y1' }
+        ]
+      },
+      options: { responsive: true, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { title: { display: true, text: config.factorLabel }, grid: { color: document.body.classList.contains('dark-theme') ? '#30363d' : '#F0F5F4' } }, y1: { position: 'right', min: 0, max: config.max, title: { display: true, text: config.impactLabel }, grid: { display: false } } } }
+    });
   }
 
   function renderPatternSurfaces(data, forceRefresh = false) {
@@ -441,6 +478,113 @@
     const urlPattern = new URLSearchParams(window.location.search).get('p');
     renderPatternDetail((urlPattern && window.AIRGUARD.PATTERNS[urlPattern]) || patterns[0]);
     return snapshot;
+  }
+
+  let dashboardBriefRequestKey = '';
+
+  function plainAIText(value) {
+    const scratch = document.createElement('div');
+    scratch.innerHTML = String(value || '');
+    return (scratch.textContent || scratch.innerText || '').replace(/\s+/g, ' ').trim();
+  }
+
+  function dashboardBaseline(data) {
+    const rows = personalRows(data);
+    return {
+      average_energy: average(rows, 'energy'),
+      average_comfort: average(rows, 'comfort'),
+      average_temperature_c: average(rows, 'temp'),
+      average_humidity_pct: average(rows, 'humidity'),
+      average_aqi: average(rows, 'aqi')
+    };
+  }
+
+  function setDashboardBrief(summary, suggestion, meta) {
+    const summaryText = document.getElementById('dashboardSummaryText');
+    const suggestionText = document.getElementById('dashboardSuggestionText');
+    const summaryMeta = document.getElementById('dashboardSummaryMeta');
+    const suggestionMeta = document.getElementById('dashboardSuggestionMeta');
+    if (summaryText) summaryText.textContent = summary;
+    if (suggestionText) suggestionText.textContent = suggestion;
+    if (summaryMeta) summaryMeta.textContent = meta;
+    if (suggestionMeta) suggestionMeta.textContent = 'Non-medical guidance based on your saved context.';
+  }
+
+  async function updateDashboardAIBrief(data, snapshot) {
+    if (!document.getElementById('dashboardDailySummary') || !data?.uid) return;
+    const checkins = data.checkins || [];
+    if (!checkins.length) {
+      setDashboardBrief('You have not saved a check-in yet, so there is no personal trend to interpret. When you are ready, a single check-in will give AIRGUARD a starting point.', 'There is nothing you need to optimise yet. Simply notice how you feel today and add it when it is useful to you.', 'Personal AI context begins after your first saved check-in.');
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const latestId = checkins[0]?.id || checkins[0]?.createdAt || '';
+    const cached = data.profile?.dashboardBrief;
+    const currentConditions = window.AIRGUARD.currentEnvironment || {};
+    const environmentStamp = currentConditions.timestamp ? String(currentConditions.timestamp).slice(0, 10) : 'unavailable';
+    if (cached?.date === today && cached?.checkinCount === checkins.length && cached?.latestCheckinId === latestId && cached?.environmentStamp === environmentStamp && cached.summary && cached.suggestion) {
+      setDashboardBrief(cached.summary, cached.suggestion, `Generated today from ${checkins.length} saved check-in${checkins.length === 1 ? '' : 's'} and your local environment.`);
+      return;
+    }
+    const requestKey = `${today}:${checkins.length}:${latestId}:${environmentStamp}`;
+    if (dashboardBriefRequestKey === requestKey) return;
+    dashboardBriefRequestKey = requestKey;
+    const summaryTitle = document.getElementById('dashboardSummaryTitle');
+    const suggestionTitle = document.getElementById('dashboardSuggestionTitle');
+    if (summaryTitle) summaryTitle.textContent = 'Putting your day into context';
+    if (suggestionTitle) suggestionTitle.textContent = 'One gentle next step';
+    setDashboardBrief('AIRGUARD AI is reading your latest saved context…', 'AIRGUARD AI is preparing a practical suggestion for today…', 'Using saved check-ins and the latest available local conditions.');
+    const patterns = Object.values(snapshot?.patterns ? Object.fromEntries(snapshot.patterns.map(pattern => [pattern.id, pattern])) : window.AIRGUARD.PATTERNS || {});
+    const payload = { patterns, baseline: dashboardBaseline(data), current_conditions: currentConditions };
+    const requestAI = async question => {
+      const response = await fetch(`${window.AIRGUARD_ENV_API || 'http://localhost:5001'}/ai/chat`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, question })
+      });
+      if (!response.ok) throw new Error(`AI request failed (${response.status})`);
+      const result = await response.json();
+      if (!result.reply) throw new Error('AI returned no dashboard text');
+      return plainAIText(result.reply);
+    };
+    try {
+      const [summary, suggestion] = await Promise.all([
+        requestAI('Write a warm two-sentence summary of this person’s day using only the supplied saved history and current environmental conditions. Do not ask a question, do not mention being an AI, and do not give advice.'),
+        requestAI('Give one warm, practical, non-medical suggestion for today using only the supplied saved history and current environmental conditions. Keep it to two short sentences, do not ask a question, and do not mention being an AI.')
+      ]);
+      const brief = { date: today, checkinCount: checkins.length, latestCheckinId: latestId, environmentStamp, summary, suggestion, generatedAt: new Date().toISOString() };
+      setDashboardBrief(summary, suggestion, `Generated today from ${checkins.length} saved check-in${checkins.length === 1 ? '' : 's'} and your local environment.`);
+      const user = window.AIRGUARD_FIREBASE?.currentUser?.();
+      if (user) window.AIRGUARD_FIREBASE.saveProfile(user, { dashboardBrief: brief }).catch(error => console.warn('Could not save dashboard AI brief', error));
+    } catch (error) {
+      console.warn('Dashboard AI unavailable; showing evidence-based fallback', error);
+      const lead = snapshot?.patterns?.[0];
+      const latest = checkins[0] || {};
+      const summary = lead ? `Your latest check-in recorded energy ${latest.energy ?? '—'}/10 and comfort ${latest.comfort ?? '—'}/10. Your saved history is also showing an early repeat: ${lead.title.toLowerCase()}.` : `Your latest check-in recorded energy ${latest.energy ?? '—'}/10 and comfort ${latest.comfort ?? '—'}/10. AIRGUARD needs a little more history before it can describe a repeat with confidence.`;
+      const suggestion = lead?.id === 'aqi' ? 'Keep any outdoor time flexible today, and check the AQI before you head out. A shorter, lower-exposure plan may feel more comfortable.' : lead?.id === 'humidity' ? 'If you are heading outside, choose a cooler or less humid time and give yourself permission to take breaks. Keep the plan easy to adjust.' : 'Use today’s conditions as a guide, not a rule. Choose the pace and place that feels most comfortable for you.';
+      setDashboardBrief(summary, suggestion, 'Personal summary shown from your saved data while AI is unavailable.');
+    } finally {
+      dashboardBriefRequestKey = '';
+    }
+  }
+
+  function updatePatternEvidenceBars(pattern, data) {
+    const rows = personalRows(data);
+    const current = window.AIRGUARD.currentEnvironment || {};
+    const values = [
+      ['Temp', 'comparisonTemp', 'comparisonTempBaseline', 'comparisonTempFill', current.temperature_c, average(rows, 'temp'), '°C', 45],
+      ['Humidity', 'comparisonHumidity', 'comparisonHumidityBaseline', 'comparisonHumidityFill', current.humidity_pct, average(rows, 'humidity'), '%', 100],
+      ['AQI', 'comparisonAQI', 'comparisonAQIBaseline', 'comparisonAQIFill', current.aqi, average(rows, 'aqi'), '', 200]
+    ];
+    values.forEach(([, currentId, baselineId, fillId, currentValue, baselineValue, suffix, max]) => {
+      const currentEl = document.getElementById(currentId);
+      const baselineEl = document.getElementById(baselineId);
+      const fill = document.getElementById(fillId);
+      if (currentEl) currentEl.textContent = Number.isFinite(Number(currentValue)) ? `${Math.round(currentValue)}${suffix}` : '—';
+      if (baselineEl) baselineEl.textContent = Number.isFinite(Number(baselineValue)) ? `${Math.round(baselineValue)}${suffix}` : '—';
+      if (fill) fill.style.width = Number.isFinite(Number(currentValue)) ? `${Math.min(100, Math.max(3, Number(currentValue) / max * 100))}%` : '0';
+    });
+    const text = document.getElementById('patternEvidenceText');
+    if (text) text.textContent = pattern ? `${pattern.impactedDays} of ${pattern.matchingDays} similar saved days matched this pattern (${pattern.confidence}% consistency).` : 'No repeat is ready to show yet—AIRGUARD needs more saved days with linked environmental data.';
   }
 
   async function refreshPatternsWithEnvironment(data) {
@@ -494,6 +638,19 @@
         activity: Math.random() > .45 ? 'Outside' : 'Indoors', notes: 'Generated sample for testing', isMockData: true,
         environment: { temperature_c: temp, humidity_pct: humidity, aqi, pm2_5: Math.round(aqi * .45), pm10: Math.round(aqi * .85), uv_index: temp > 33 ? 8 : 5, pollen_level: humidity > 72 ? 'Moderate' : 'Low', location: location.label }
       });
+      if (index % 2 === 0) {
+        const activityOptions = ['Morning walk', 'Yoga', 'Cycling', 'Evening walk'];
+        const activity = activityOptions[index % activityOptions.length];
+        await window.AIRGUARD_FIREBASE.saveActivity(user, {
+          activity,
+          duration: `${30 + (index % 3) * 15} minutes`,
+          plannedTime: index % 3 === 0 ? '07:30' : index % 3 === 1 ? '17:30' : '18:30',
+          location: location.label,
+          createdAt: date.toISOString(),
+          isMockData: true,
+          environment: { temperature_c: temp, humidity_pct: humidity, aqi }
+        });
+      }
       onProgress(total - index, total);
     }
     localStorage.removeItem(patternCacheKey({ uid: user.uid }));
@@ -641,6 +798,12 @@
     const key = new URLSearchParams(window.location.search).get('p');
     const pattern = key && window.AIRGUARD?.PATTERNS?.[key];
     if (pattern) renderPatternDetail(pattern);
+    const data = getCachedUserData();
+    if (data?.uid && document.getElementById('dashboardDailySummary')) {
+      const snapshot = getPatternSnapshot(data);
+      updateDashboardAIBrief(data, snapshot);
+      updatePatternEvidenceBars(snapshot.patterns?.[0], data);
+    }
   });
 
   function applyUserMode(data) {
@@ -669,7 +832,7 @@
       const recorded = item.createdAt || item.timestamp;
       const date = recorded ? new Date(recorded).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Saved activity';
       const details = [item.duration, item.plannedTime && `Planned ${item.plannedTime}`, item.location].filter(Boolean).join(' · ') || 'Details will appear after saving';
-      return `<div style="padding:${compact ? '11px 12px' : '15px 16px'};border:1px solid var(--border-soft);border-radius:12px;background:var(--card-bg);display:flex;align-items:center;justify-content:space-between;gap:12px;">
+      return `<div class="activity-card" style="padding:${compact ? '11px 12px' : '15px 16px'};border:1px solid var(--border-soft);border-radius:12px;background:var(--card-bg);display:flex;align-items:center;justify-content:space-between;gap:12px;">
         <div style="min-width:0;"><div style="font-weight:800;">${item.activity || 'Activity'}</div><div class="secondary-text" style="font-size:12px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${details}</div></div>
         <div class="secondary-text" style="font-size:11px;white-space:nowrap;text-align:right;">${date}</div>
       </div>`;
@@ -698,6 +861,8 @@
     }
     const snapshot = renderPatternSurfaces(data);
     refreshPatternsWithEnvironment(data);
+    const leadPattern = snapshot.patterns?.[0];
+    updateDashboardAIBrief(data, snapshot);
     const dashboardPattern = document.getElementById('dashboardPersonalInsight');
     if (dashboardPattern) {
       const pattern = snapshot.patterns?.[0];
@@ -712,6 +877,7 @@
         if (patternBody) patternBody.textContent = 'Save more check-ins with live environmental snapshots and AIRGUARD will look for personal patterns.';
         if (patternAverage) patternAverage.textContent = 'Not enough evidence yet.';
       }
+      updatePatternEvidenceBars(pattern, data);
     }
     const weeklyPattern = document.getElementById('weeklyPatternCard');
     renderWeeklySummary(data);
@@ -725,9 +891,9 @@
       const evidence = weeklyPattern.querySelector('a');
       if (evidence) { evidence.textContent = pattern ? 'Inspect evidence →' : 'Evidence needs more data'; if (pattern) evidence.href = `pattern-detail.html?p=${pattern.id}`; }
     }
-    document.getElementById('dashboardSuggestionCard')?.remove();
     document.getElementById('environmentBaselineCard')?.remove();
-    document.querySelectorAll('.ai-summary-card .ai-summary-body, .ai-summary-card .ai-refresh-row, .ai-prompts-row').forEach(el => el.textContent = 'Awaiting personal data');
+    // Pattern and weekly summary cards are filled from the signed-in user's
+    // records above. Do not replace them with generic placeholder text.
     ['recentPatternChart', 'env7DayChart', 'weekEnvChart'].forEach(id => {
       const canvas = document.getElementById(id);
       if (!canvas || daysData.length) return;
@@ -828,11 +994,46 @@
     initThemeState();
     initSliders();
     initChips();
+    initScrollReveal();
     applyUserMode(getCachedUserData());
     updateCurrentEnvironment();
     updateCurrentTime();
     setInterval(updateCurrentTime, 60000);
   });
+
+  // Gentle entrance motion for the page sections that opt into it. This is
+  // deliberately progressive: content remains fully usable without JS.
+  function initScrollReveal() {
+    const targets = [...document.querySelectorAll('[data-reveal], .main-viewport > .card, .main-viewport > .dash-2col, .main-viewport > .grid, .landing-body main > section')];
+    if (!targets.length || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!('IntersectionObserver' in window)) {
+      targets.forEach(el => el.classList.add('is-visible'));
+      return;
+    }
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.12 });
+    const observe = (el, index = 0) => {
+      if (!(el instanceof Element) || el.dataset.revealBound === 'true') return;
+      el.dataset.revealBound = 'true';
+      el.classList.add('rise-on-scroll');
+      el.style.transitionDelay = `${Math.min(index % 5, 4) * 55}ms`;
+      observer.observe(el);
+    };
+    targets.forEach(observe);
+    const main = document.querySelector('main');
+    if (main) new MutationObserver(records => {
+      records.flatMap(record => [...record.addedNodes]).forEach(node => {
+        if (!(node instanceof Element)) return;
+        if (node.matches('[data-reveal], .pattern-card, .timeline-day-card, .activity-card')) observe(node);
+        node.querySelectorAll?.('[data-reveal], .pattern-card, .timeline-day-card, .activity-card').forEach(observe);
+      });
+    }).observe(main, { childList: true, subtree: true });
+  }
   
   // Tooltip Engine
   function initTooltips() {

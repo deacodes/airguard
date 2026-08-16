@@ -79,7 +79,7 @@
 
       <div class="page-header-row">
         <h1 class="page-title" id="pdTitle">High Humidity → Lower Energy</h1>
-        <p class="page-subtitle">Evidence Dossier · 30-Day Observational Correlation</p>
+        <p class="page-subtitle">Your saved history · a personal observation</p>
       </div>
 
       <div class="card" style="margin-bottom:20px;">
@@ -91,27 +91,27 @@
       <!-- TOP 4 SUMMARY STAT CARDS -->
       <div class="grid grid-4" style="margin-bottom:20px;">
         <div class="card stat-card">
-          <div class="stat-label">MATCHING DAYS</div>
+          <div class="stat-label">SIMILAR DAYS</div>
           <div class="stat-value" id="pdMatching">11</div>
-          <div class="stat-caption">Days with humidity &gt;56%</div>
+          <div class="stat-caption">Days with a similar condition</div>
         </div>
 
         <div class="card stat-card">
-          <div class="stat-label">LOWER-ENERGY DAYS</div>
+          <div class="stat-label">DAYS YOU FELT DIFFERENT</div>
           <div class="stat-value" id="pdLower">8</div>
-          <div class="stat-caption">Reported energy &lt;5.5/10</div>
+          <div class="stat-caption">The wellbeing measure this pattern follows</div>
         </div>
 
         <div class="card stat-card">
-          <div class="stat-label">PATTERN STRENGTH</div>
+          <div class="stat-label">HOW CLEAR THE REPEAT IS</div>
           <div class="stat-value" id="pdStrength" style="color:var(--purple-fg);">Moderate</div>
-          <div class="stat-caption">Consistent correlation</div>
+          <div class="stat-caption">How often this showed up in your history</div>
         </div>
 
         <div class="card stat-card">
-          <div class="stat-label">STATISTICAL CONFIDENCE</div>
+          <div class="stat-label">HOW CONSISTENT IT LOOKS</div>
           <div class="stat-value" id="pdConfidence" style="color:var(--purple-fg);">73%</div>
-          <div class="stat-caption">p &lt; 0.05 observational</div>
+          <div class="stat-caption">A guide, not a medical conclusion</div>
         </div>
       </div>
 
@@ -119,12 +119,12 @@
       <div class="card" style="margin-bottom:20px;">
         <div class="chart-card-top">
           <div>
-            <h3>Humidity (%) vs Reported Energy</h3>
-            <p class="secondary-text" style="font-size:12px; margin-top:2px;">Notice how energy dips whenever humidity rises above personal baseline (56%).</p>
+            <h3 id="pdChartTitle">Humidity (%) vs Reported Energy</h3>
+            <p class="secondary-text" id="pdChartSubtitle" style="font-size:12px; margin-top:2px;">Compare the environmental signal with the wellbeing measure AIRGUARD matched it to.</p>
           </div>
           <div class="chart-legend-row">
-            <span><span class="sw" style="background:var(--blue);"></span>Humidity (%)</span>
-            <span><span class="sw" style="background:var(--purple);"></span>Energy (1–10)</span>
+            <span id="pdChartLegendOne"><span class="sw" style="background:var(--blue);"></span>Humidity (%)</span>
+            <span id="pdChartLegendTwo"><span class="sw" style="background:var(--purple);"></span>Energy (1–10)</span>
           </div>
         </div>
         <canvas id="patternDetailChart" height="95"></canvas>
@@ -140,7 +140,16 @@
 
       <div class="card" style="margin-bottom:20px;">
         <h3 class="card-heading" style="margin-bottom:8px;">Explore the context</h3>
-        <div id="pdSources" style="display:grid;gap:10px;"></div>
+        <div id="pdSources" style="display:grid;gap:10px;">
+          <a href="https://www.who.int/news-room/fact-sheets/detail/heat-and-health" target="_blank" rel="noopener" style="display:block;padding:12px 14px;border:1px solid var(--border-soft);border-radius:10px;text-decoration:none;background:var(--card-bg);">
+            <span style="display:block;font-weight:800;color:var(--text);">Heat and humidity basics ↗</span>
+            <span style="display:block;margin-top:4px;font-size:12px;line-height:1.5;color:var(--text-secondary);">General information from the World Health Organization.</span>
+          </a>
+          <a href="https://www.airnow.gov/aqi/" target="_blank" rel="noopener" style="display:block;padding:12px 14px;border:1px solid var(--border-soft);border-radius:10px;text-decoration:none;background:var(--card-bg);">
+            <span style="display:block;font-weight:800;color:var(--text);">How to read the AQI ↗</span>
+            <span style="display:block;margin-top:4px;font-size:12px;line-height:1.5;color:var(--text-secondary);">A plain-language guide from AirNow.</span>
+          </a>
+        </div>
       </div>
 
       <!-- SIMILAR DAYS HISTORICAL EVIDENCE TABLE -->

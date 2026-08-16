@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
-<body>
+<body class="dashboard-page">
 
 <div class="app">
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -90,9 +90,22 @@
         </div>
       </div>
 
+    <section class="dashboard-guidance-grid" aria-label="Your day at a glance" data-reveal>
+      <article class="card dashboard-guidance-card dashboard-summary-card" id="dashboardDailySummary" data-reveal>
+          <h2 class="dashboard-guidance-title" id="dashboardSummaryTitle">Putting your day into context</h2>
+          <p class="body-text" id="dashboardSummaryText">AIRGUARD is preparing a personal summary from your latest check-ins and the conditions around you.</p>
+          <p class="dashboard-ai-meta" id="dashboardSummaryMeta">Updates when your saved data changes.</p>
+        </article>
+      <article class="card dashboard-guidance-card dashboard-suggestion-card" id="dashboardTodaySuggestion" data-reveal>
+          <h2 class="dashboard-guidance-title" id="dashboardSuggestionTitle">One gentle next step</h2>
+          <p class="body-text" id="dashboardSuggestionText">AIRGUARD is preparing one practical suggestion for today using your environment and personal history.</p>
+          <p class="dashboard-ai-meta" id="dashboardSuggestionMeta">Non-medical guidance based on your saved context.</p>
+        </article>
+      </section>
+
       <!-- TODAY'S ENVIRONMENT PILL ROW -->
-      <h2 class="section-heading">Today's Environment</h2>
-        <div class="pill-row" style="margin-bottom: 24px;">
+      <h2 class="section-heading" data-reveal>Today's Environment</h2>
+        <div class="pill-row dashboard-env-grid" style="margin-bottom: 24px;" data-reveal>
           <div class="env-pill" data-tip="AQI is 128 (Moderately elevated). 39% higher than your personal baseline (92).">
           <span class="dot" style="background:var(--amber);"></span>
           <span class="label">AQI</span>
@@ -127,7 +140,7 @@
       </div>
 
       <!-- MAIN 2-COLUMN DASHBOARD GRID -->
-      <div class="dash-2col">
+      <div class="dash-2col" data-reveal>
 
         <!-- LEFT COLUMN: PERSONAL PATTERN DETECTED (PRIMARY FOCUS) -->
         <div class="card insight-card" id="dashboardPersonalInsight">
@@ -135,12 +148,13 @@
             <span class="insight-icon-badge">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
             </span>
-            <h3 class="card-heading">Personal Pattern Detected</h3>
+            <h3 class="card-heading">A pattern worth watching</h3>
           </div>
-          <p class="body-text">Today's conditions resemble 5 previous days where you reported lower comfort.</p>
-          <p class="avg-highlight-line">On those 5 days, your average comfort was <b>4.2 / 10</b> (vs your avg 6.2).</p>
+          <p class="body-text">AIRGUARD will show a repeat here once your saved check-ins include enough matching environment data.</p>
+          <p class="avg-highlight-line" id="patternEvidenceText">Looking for a related signal in your history.</p>
+          <p class="secondary-text pattern-plain-language">This is a repeat in your own history—not a medical diagnosis.</p>
 
-          <div class="cmp-bar-container">
+          <div class="cmp-bar-container" id="patternEvidenceBars" aria-label="Today compared with your usual conditions">
               <div class="cmp-row">
                 <div class="cmp-row-top">
                   <span class="label">Temperature</span>
@@ -149,48 +163,32 @@
                       class="hi"
                       id="comparisonTemp"
                       style="color:var(--red-fg);"
-                    >34°C</span>
+                    >—</span>
                     /
-                    <span id="comparisonTempBaseline">28°C</span>
+                    <span id="comparisonTempBaseline">—</span>
                   </span>
                 </div>
               <div class="cmp-track">
-                <div class="cmp-fill" style="width: 78%; background: var(--red);"></div>
+                <div class="cmp-fill" id="comparisonTempFill" style="width: 0; background: var(--red);"></div>
               </div>
             </div>
             <div class="cmp-row">
               <div class="cmp-row-top">
                 <span class="label">Humidity</span>
-                <span class="vals"><span class="hi" id="comparisonHumidity" style="color:var(--blue-fg);">72%</span> / 45%</span>
+                <span class="vals"><span class="hi" id="comparisonHumidity" style="color:var(--blue-fg);">—</span> / <span id="comparisonHumidityBaseline">—</span></span>
               </div>
               <div class="cmp-track">
-                <div class="cmp-fill" style="width: 82%; background: var(--blue);"></div>
+                <div class="cmp-fill" id="comparisonHumidityFill" style="width: 0; background: var(--blue);"></div>
               </div>
             </div>
             <div class="cmp-row" style="margin-bottom:0;">
               <div class="cmp-row-top">
                 <span class="label">AQI</span>
-                <span class="vals"><span class="hi" id="comparisonAQI" style="color:var(--amber-fg);">128</span> / 92</span>
+                <span class="vals"><span class="hi" id="comparisonAQI" style="color:var(--amber-fg);">—</span> / <span id="comparisonAQIBaseline">—</span></span>
               </div>
               <div class="cmp-track">
-                <div class="cmp-fill" style="width: 70%; background: var(--amber);"></div>
+                <div class="cmp-fill" id="comparisonAQIFill" style="width: 0; background: var(--amber);"></div>
               </div>
-            </div>
-          </div>
-
-          <div class="mini-chart-wrap">
-            <div class="mc-title">
-              <span class="t">Comfort comparison</span>
-              <span class="s">Today vs baseline days</span>
-            </div>
-            <div style="display:flex; gap:6px; margin:6px 0 8px;">
-              <button type="button" class="toggle-btn active" id="comfortMetricBtn">Comfort</button>
-              <button type="button" class="toggle-btn" id="energyMetricBtn">Energy</button>
-            </div>
-            <canvas id="comfortComparisonChart" height="90"></canvas>
-            <div class="mini-legend">
-              <span><span class="sw" style="background:var(--blue);"></span>Baseline days</span>
-              <span><span class="sw" style="background:var(--red);"></span>Today</span>
             </div>
           </div>
 
@@ -201,7 +199,7 @@
         <div style="display:flex; flex-direction:column; gap:16px;">
           
           <!-- TODAY'S SUGGESTION CARD -->
-          <div class="card" id="dashboardSuggestionCard">
+          <div class="card" id="legacyDashboardSuggestion">
             <h2 class="section-heading" style="margin-bottom:8px;">Today's Suggestion</h2>
             <p class="body-text" style="font-weight:700;">Consider moving prolonged outdoor activity to a cooler part of the day.</p>
             <div class="suggestion-meta">
@@ -218,7 +216,7 @@
           </div>
 
           <!-- QUICK CHECK-IN CARD -->
-          <div class="card">
+          <div class="card" id="dashboardQuickCheckin">
             <h2 class="section-heading" style="margin-bottom:6px;">Quick Check-in</h2>
             <p class="secondary-text" style="font-weight:600; margin-bottom:14px;">How are you feeling right now?</p>
             
@@ -262,10 +260,9 @@
         </div>
       </div>
 
-      <div class="card" id="dashboardActivityPanel" style="margin-top:24px; padding:20px;">
+      <div class="card" id="dashboardActivityPanel" style="margin-top:24px; padding:20px;" data-reveal>
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
           <div>
-            <div class="eyebrow" style="margin-bottom:5px;font-weight:700;">Movement</div>
             <h2 class="section-heading" style="margin:0 0 5px;">Activities</h2>
             <p class="secondary-text" style="margin:0;">Your latest saved activities and planned windows.</p>
           </div>
@@ -278,7 +275,7 @@
 
       <!-- YOUR WELLNESS 4 STAT CARDS -->
       <h2 class="section-heading">Your Wellness</h2>
-      <div class="grid grid-4" id="dashboardWellnessGrid">
+      <div class="grid grid-4" id="dashboardWellnessGrid" data-reveal>
         
         <div class="card stat-card">
           <div class="stat-top">
