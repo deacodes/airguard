@@ -460,6 +460,10 @@
       }) };
       const linked = enriched.checkins.filter(item => item.environment?.temperature_c != null || item.environment?.humidity_pct != null || item.environment?.aqi != null).length;
       if (linked >= 3) {
+        const user = window.AIRGUARD_FIREBASE?.currentUser?.();
+        if (user && window.AIRGUARD_FIREBASE.updateCheckinEnvironment) {
+          await Promise.all(enriched.checkins.filter(item => item.id && (!checkins.find(original => original.id === item.id)?.environment) && item.environment).map(item => window.AIRGUARD_FIREBASE.updateCheckinEnvironment(user, item.id, item.environment)));
+        }
         daysData = buildUserDays(enriched);
         window.AIRGUARD.daysData = daysData;
         renderPatternSurfaces(enriched, true);

@@ -111,6 +111,8 @@
     const key = collection === "checkins" ? "checkins" : collection === "activities" ? "activities" : "conversations";
     updateCached(user, { [key]: [{ id: localId, ...payload }, ...(cached[key] || [])] });
     const ref = await db.collection(`users/${user.uid}/${collection}`).add(payload);
+    const confirmed = await ref.get({ source: "server" });
+    if (!confirmed.exists) throw new Error(`Firebase did not confirm the ${collection} record.`);
     const fresh = readCache(user.uid) || emptyData(user);
     fresh[key] = (fresh[key] || []).map(item => item.id === localId ? { ...item, id: ref.id } : item);
     writeCache(fresh);
@@ -119,6 +121,27 @@
   async function saveCheckin(user, checkin) { return saveRecord(user, "checkins", checkin); }
   async function saveActivity(user, activity) { return saveRecord(user, "activities", activity); }
   async function saveConversation(user, message) { return saveRecord(user, "conversations", message); }
+  async function updateCheckinEnvironment(user, checkinId, environment) {
+    if (!checkinId || String(checkinId).startsWith('local-')) return null;
+    await db.doc(`users/${user.uid}/checkins/${checkinId}`).update({ environment, environmentLinkedAt: new Date().toISOString() });
+    const cached = readCache(user.uid) || emptyData(user);
+    cached.checkins = (cached.checkins || []).map(item => item.id === checkinId ? { ...item, environment, environmentLinkedAt: new Date().toISOString() } : item);
+    writeCache(cached);
+    return environment;
+  }
+  async function deleteCollection(user, collection) {
+    const ref = db.collection(`users/${user.uid}/${collection}`);
+    const snap = await ref.get({ source: "server" });
+    const batch = db.batch();
+    snap.docs.forEach(doc => batch.delete(doc.ref));
+    if (snap.docs.length) await batch.commit();
+    const cached = readCache(user.uid) || emptyData(user);
+    const key = collection === "checkins" ? "checkins" : collection === "activities" ? "activities" : "conversations";
+    cached[key] = [];
+    writeCache(cached);
+    window.dispatchEvent(new CustomEvent("airguard-data-ready", { detail: cached }));
+    return snap.docs.length;
+  }
 
   let resolveReady;
   const ready = new Promise(resolve => { resolveReady = resolve; });
@@ -143,7 +166,8 @@
       return result.user;
     },
     signIn: async (email, password) => (await auth.signInWithEmailAndPassword(email, password)).user,
-    signOut: () => auth.signOut(), saveProfile, saveCheckin, saveActivity, saveConversation,
+    signOut: () => auth.signOut(), saveProfile, saveCheckin, saveActivity, saveConversation, updateCheckinEnvironment,
+    deleteCheckins: user => deleteCollection(user, "checkins"),
     setDemoMode: () => { localStorage.setItem("airguard_demo", "true"); localStorage.removeItem(legacyCacheKey); },
     clearDemoMode: () => localStorage.removeItem("airguard_demo")
   };

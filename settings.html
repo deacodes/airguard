@@ -296,6 +296,35 @@
       renderSettingsLocation();
       window.addEventListener('airguard-data-ready', renderSettingsLocation);
 
+      const applyPreferences = (data) => {
+        const preferences = data?.profile?.preferences || {};
+        const tempUnit = document.getElementById('tempUnitSelect');
+        const distUnit = document.getElementById('distUnitSelect');
+        if (tempUnit && preferences.tempUnit) tempUnit.value = preferences.tempUnit;
+        if (distUnit && preferences.distanceUnit) distUnit.value = preferences.distanceUnit;
+        document.querySelectorAll('[data-switch]').forEach(btn => {
+          const saved = preferences[`notification_${btn.dataset.switch}`];
+          if (typeof saved === 'boolean') btn.classList.toggle('on', saved);
+        });
+      };
+      const cachedProfile = window.AIRGUARD_FIREBASE?.getCachedData?.() || {};
+      const preferences = cachedProfile.profile?.preferences || {};
+      const tempUnit = document.getElementById('tempUnitSelect');
+      const distUnit = document.getElementById('distUnitSelect');
+      if (tempUnit && preferences.tempUnit) tempUnit.value = preferences.tempUnit;
+      if (distUnit && preferences.distanceUnit) distUnit.value = preferences.distanceUnit;
+      applyPreferences(cachedProfile);
+      window.addEventListener('airguard-data-ready', event => applyPreferences(event.detail));
+      const savePreference = async (key, value) => {
+        const user = window.AIRGUARD_FIREBASE?.currentUser?.();
+        if (!user) return;
+        const current = window.AIRGUARD_FIREBASE.getCachedData?.()?.profile || {};
+        try { await window.AIRGUARD_FIREBASE.saveProfile(user, { preferences: { ...(current.preferences || {}), [key]: value } }); }
+        catch (error) { window.AIRGUARD.showToast('Could not save this setting to Firebase'); console.warn(error); }
+      };
+      tempUnit?.addEventListener('change', () => savePreference('tempUnit', tempUnit.value));
+      distUnit?.addEventListener('change', () => savePreference('distanceUnit', distUnit.value));
+
       // Theme switch logic
       const themeSwitch = document.getElementById('themeSwitch');
       if (themeSwitch) {
@@ -307,6 +336,7 @@
           const isDark = themeSwitch.classList.contains('on');
           document.body.classList.toggle('dark-theme', isDark);
           localStorage.setItem('airguard_theme', isDark ? 'dark' : 'light');
+          savePreference('theme', isDark ? 'dark' : 'light');
           window.AIRGUARD.showToast(`Theme switched to ${isDark ? 'Dark' : 'Light'}`);
         });
       }
@@ -317,6 +347,7 @@
           btn.classList.toggle('on');
           const name = btn.dataset.switch;
           const state = btn.classList.contains('on') ? 'enabled' : 'disabled';
+          savePreference(`notification_${name}`, state === 'enabled');
           window.AIRGUARD.showToast(`Notification ${state}`);
         });
       });
@@ -335,12 +366,16 @@
 
       const deleteHistoryBtn = document.getElementById('deleteHistoryBtn');
       if (deleteHistoryBtn) {
-        deleteHistoryBtn.addEventListener('click', () => {
+        deleteHistoryBtn.addEventListener('click', async () => {
           if (confirm("Clear all recorded check-ins?")) {
-            localStorage.removeItem('airguard_custom_logs');
-            const cached = window.AIRGUARD_FIREBASE?.getCachedData?.();
-            if (cached) { cached.checkins = []; localStorage.setItem('airguard_user_data', JSON.stringify(cached)); }
-            window.AIRGUARD.showToast("Wellness check-in history cleared");
+            const user = window.AIRGUARD_FIREBASE?.currentUser?.();
+            try {
+              if (!user) throw new Error('Please sign in before deleting Firebase history.');
+              const count = await window.AIRGUARD_FIREBASE.deleteCheckins(user);
+              await window.AIRGUARD_FIREBASE.saveProfile(user, { patternSnapshot: null });
+              localStorage.removeItem('airguard_custom_logs');
+              window.AIRGUARD.showToast(`${count} check-in${count === 1 ? '' : 's'} deleted from Firebase`);
+            } catch (error) { window.AIRGUARD.showToast(error.message || 'Could not delete check-ins from Firebase'); }
           }
         });
       }
