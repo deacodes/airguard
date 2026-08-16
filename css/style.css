@@ -2114,6 +2114,24 @@ body.dark-theme .ai-input-bar input {
   border-color: #30363d !important;
 }
 
+body.dark-theme input[type="range"] {
+  height: 8px;
+  background: #4b5563 !important;
+  border: 0;
+}
+
+body.dark-theme input[type="range"]::-webkit-slider-thumb {
+  background: var(--purple);
+  border-color: #161b22;
+  box-shadow: 0 0 0 2px var(--purple);
+}
+
+body.dark-theme input[type="range"]::-moz-range-thumb {
+  background: var(--purple);
+  border-color: #161b22;
+  box-shadow: 0 0 0 2px var(--purple);
+}
+
 body.dark-theme .card,
 body.dark-theme .modal-box,
 body.dark-theme .checkin-step-card,

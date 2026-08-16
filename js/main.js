@@ -257,6 +257,248 @@
     }
   };
 
+  // Evidence-backed personal pattern engine. Signed-in users only see
+  // patterns derived from their saved check-ins and paired environmental
+  // snapshots. The snapshot is cached for one calendar day so a reload does
+  // not silently invent a new explanation.
+  const PATTERN_CACHE_PREFIX = 'airguard_pattern_snapshot_';
+  const patternCacheKey = data => `${PATTERN_CACHE_PREFIX}${data?.uid || 'guest'}`;
+  const numeric = value => Number.isFinite(Number(value)) ? Number(value) : null;
+  const localDateKey = value => value ? new Date(value).toLocaleDateString('en-CA') : '';
+  const dayText = value => value ? new Date(value).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—';
+  const personalRows = data => (data?.checkins || []).map(item => ({
+    date: item.createdAt || item.timestamp,
+    temp: numeric(item.environment?.temperature_c),
+    humidity: numeric(item.environment?.humidity_pct),
+    aqi: numeric(item.environment?.aqi),
+    energy: numeric(item.energy),
+    comfort: numeric(item.comfort),
+    sleep: numeric(item.sleep),
+    movement: numeric(item.movement),
+    activity: String(item.activity || '').toLowerCase(),
+    symptoms: Array.isArray(item.symptoms) ? item.symptoms : []
+  })).filter(item => item.date);
+  const average = (items, key) => {
+    const values = items.map(item => numeric(item[key])).filter(value => value != null);
+    return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
+  };
+  const percent = value => `${Math.round(value)}%`;
+  const patternRows = (rows, key, threshold, direction = 'high') => rows.filter(row => {
+    const value = numeric(row[key]);
+    return value != null && (direction === 'high' ? value >= threshold : value <= threshold);
+  });
+
+  function buildPersonalPatterns(data) {
+    const rows = personalRows(data);
+    const patterns = [];
+    if (rows.length < 3) return patterns;
+    const colors = {
+      purple: ['var(--purple)', 'var(--purple-bg)', 'var(--purple-fg)'],
+      blue: ['var(--blue)', 'var(--blue-bg)', 'var(--blue-fg)'],
+      red: ['var(--red)', 'var(--red-bg)', 'var(--red-fg)'],
+      amber: ['var(--amber)', 'var(--amber-bg)', 'var(--amber-fg)']
+    };
+    const addPattern = (pattern, color) => patterns.push({ ...pattern, color: colors[color][0], badgeBg: colors[color][1], badgeColor: colors[color][2] });
+    const makeSimilar = matched => matched.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 8).map(row => ({
+      date: dayText(row.date), temp: row.temp == null ? '—' : `${Math.round(row.temp)}°C`, hum: row.humidity == null ? '—' : `${Math.round(row.humidity)}%`,
+      aqi: row.aqi == null ? '—' : Math.round(row.aqi), energy: row.energy == null ? '—' : `${row.energy.toFixed(1)} / 10`, comfort: row.comfort == null ? '—' : `${row.comfort.toFixed(1)} / 10`, symptoms: row.symptoms.length ? row.symptoms.join(', ') : 'None'
+    }));
+
+    const envRows = rows.filter(row => row.temp != null || row.humidity != null || row.aqi != null);
+    const latestRow = rows.slice().sort((a, b) => new Date(b.date) - new Date(a.date))[0] || {};
+    const energyBaseline = average(rows, 'energy');
+    const comfortBaseline = average(rows, 'comfort');
+    const humidityAvg = average(envRows, 'humidity');
+    if (humidityAvg != null && energyBaseline != null) {
+      const threshold = Math.max(60, humidityAvg + (rows.length >= 7 ? 8 : 3));
+      const matched = patternRows(envRows, 'humidity', threshold);
+      const impacted = matched.filter(row => row.energy != null && row.energy < energyBaseline);
+      const control = envRows.filter(row => row.humidity != null && row.humidity < threshold && row.energy != null);
+      const controlRate = control.length ? control.filter(row => row.energy < energyBaseline).length / control.length : 0;
+      const rate = matched.length ? impacted.length / matched.length : 0;
+      if (matched.length >= 2 && impacted.length >= 1 && rate >= controlRate) {
+        const confidence = clamp(45 + (rate - controlRate) * 70 + Math.min(15, matched.length), 45, 94);
+        addPattern({ id: 'humidity', title: 'High Humidity → Lower Energy', factor: 'Humidity', impact: 'Lower Energy', matchingDays: matched.length, impactedDays: impacted.length, strength: confidence >= 75 ? 'Strong signal' : confidence >= 60 ? 'Moderate signal' : 'Early signal', confidence: Math.round(confidence), todayVal: latestRow.humidity == null ? 'No live value' : `${Math.round(latestRow.humidity)}% (latest saved)`, baselineVal: `${Math.round(humidityAvg)}%`, deltaVal: `${Math.round(threshold - humidityAvg)} points above baseline`, foundText: `On days where humidity was above ${Math.round(threshold)}%, your energy was below your personal average on ${impacted.length} of ${matched.length} occasions.`, whyFlaggedText: `AIRGUARD compared your saved environmental snapshots with your energy reports.`, similarDays: makeSimilar(matched), description: `On days when humidity is above ${Math.round(threshold)}%, your energy score falls below your average of ${energyBaseline.toFixed(1)} / 10.` }, 'purple');
+      }
+    }
+
+    const tempAvg = average(envRows, 'temp');
+    if (tempAvg != null && comfortBaseline != null) {
+      const threshold = tempAvg + (rows.length >= 7 ? 4 : 2);
+      const matched = patternRows(envRows, 'temp', threshold);
+      const impacted = matched.filter(row => row.comfort != null && row.comfort < comfortBaseline);
+      const control = envRows.filter(row => row.temp != null && row.temp < threshold && row.comfort != null);
+      const controlRate = control.length ? control.filter(row => row.comfort < comfortBaseline).length / control.length : 0;
+      const rate = matched.length ? impacted.length / matched.length : 0;
+      if (matched.length >= 2 && impacted.length >= 1 && rate >= controlRate) {
+        const confidence = clamp(45 + (rate - controlRate) * 75 + Math.min(15, matched.length), 45, 92);
+        addPattern({ id: 'temp', title: 'Higher Temperatures → Lower Comfort', factor: 'Temperature', impact: 'Lower Comfort', matchingDays: matched.length, impactedDays: impacted.length, strength: confidence >= 75 ? 'Strong signal' : confidence >= 60 ? 'Moderate signal' : 'Early signal', confidence: Math.round(confidence), todayVal: latestRow.temp == null ? 'No live value' : `${Math.round(latestRow.temp)}°C (latest saved)`, baselineVal: `${tempAvg.toFixed(1)}°C`, deltaVal: `+${Math.round(threshold - tempAvg)}°C threshold`, foundText: `On days above ${threshold.toFixed(1)}°C, your comfort was below your average on ${impacted.length} of ${matched.length} occasions.`, whyFlaggedText: 'AIRGUARD compared temperature snapshots with your comfort check-ins.', similarDays: makeSimilar(matched), description: `Your comfort tends to be lower on hotter days than your personal temperature baseline.` }, 'red');
+      }
+    }
+
+    const aqiAvg = average(envRows, 'aqi');
+    if (aqiAvg != null) {
+      const threshold = aqiAvg + (rows.length >= 7 ? 20 : 10);
+      const matched = patternRows(envRows, 'aqi', threshold);
+      const impacted = matched.filter(row => row.symptoms.some(symptom => /congestion|breathing|eye|headache/i.test(symptom)));
+      const control = envRows.filter(row => row.aqi != null && row.aqi < threshold);
+      const controlRate = control.length ? control.filter(row => row.symptoms.some(symptom => /congestion|breathing|eye|headache/i.test(symptom))).length / control.length : 0;
+      const rate = matched.length ? impacted.length / matched.length : 0;
+      if (matched.length >= 2 && impacted.length >= 1 && rate >= controlRate) {
+        const confidence = clamp(42 + (rate - controlRate) * 70 + Math.min(15, matched.length), 42, 90);
+        addPattern({ id: 'aqi', title: 'Higher AQI → More Reported Air Symptoms', factor: 'AQI', impact: 'Reported Symptoms', matchingDays: matched.length, impactedDays: impacted.length, strength: confidence >= 75 ? 'Strong signal' : confidence >= 60 ? 'Moderate signal' : 'Early signal', confidence: Math.round(confidence), todayVal: latestRow.aqi == null ? 'No live value' : `${Math.round(latestRow.aqi)} (latest saved)`, baselineVal: `${Math.round(aqiAvg)}`, deltaVal: `${Math.round(threshold - aqiAvg)} points above baseline`, foundText: `On higher-AQI days, you reported an air-related symptom on ${impacted.length} of ${matched.length} occasions.`, whyFlaggedText: 'AIRGUARD compared AQI snapshots with your reported symptoms.', similarDays: makeSimilar(matched), description: `Your saved records show more reported air-related symptoms on higher-AQI days.` }, 'blue');
+      }
+    }
+
+    if (rows.filter(row => row.sleep != null && row.energy != null).length >= 4 && energyBaseline != null) {
+      const sleepAvg = average(rows, 'sleep');
+      const matched = rows.filter(row => row.sleep != null && row.sleep < sleepAvg - 0.5);
+      const impacted = matched.filter(row => row.energy < energyBaseline);
+      if (matched.length >= 3 && impacted.length >= 2) {
+        const confidence = clamp(55 + (impacted.length / matched.length) * 30, 55, 88);
+        addPattern({ id: 'sleep', title: 'Shorter Sleep → Lower Energy', factor: 'Sleep', impact: 'Lower Energy', matchingDays: matched.length, impactedDays: impacted.length, strength: confidence >= 75 ? 'Strong signal' : 'Moderate signal', confidence: Math.round(confidence), todayVal: 'Latest saved entry', baselineVal: `${sleepAvg.toFixed(1)}h`, deltaVal: '-0.5h threshold', foundText: `On shorter-sleep days, your energy was below average on ${impacted.length} of ${matched.length} occasions.`, whyFlaggedText: 'AIRGUARD compared your sleep reports with your energy scores.', similarDays: makeSimilar(matched), description: `Your energy is more often below baseline after nights with less sleep.` }, 'amber');
+      }
+    }
+    return patterns.sort((a, b) => b.confidence - a.confidence).slice(0, Math.min(4, Math.max(2, patterns.length)));
+  }
+
+  function getPatternSnapshot(data, forceRefresh = false) {
+    const key = patternCacheKey(data);
+    const today = new Date().toISOString().slice(0, 10);
+    if (!forceRefresh && data?.profile?.patternSnapshot?.engineVersion === 3 && data.profile.patternSnapshot.date === today && Array.isArray(data.profile.patternSnapshot.patterns)) {
+      localStorage.setItem(key, JSON.stringify(data.profile.patternSnapshot));
+      return data.profile.patternSnapshot;
+    }
+    try {
+      const cached = JSON.parse(localStorage.getItem(key) || 'null');
+      if (!forceRefresh && cached?.engineVersion === 3 && cached?.date === today && Array.isArray(cached.patterns)) return cached;
+    } catch (error) { /* regenerate below */ }
+    const snapshot = { engineVersion: 3, date: today, generatedAt: new Date().toISOString(), patterns: buildPersonalPatterns(data) };
+    localStorage.setItem(key, JSON.stringify(snapshot));
+    return snapshot;
+  }
+
+  function renderPatternDetail(pattern) {
+    if (!pattern || !document.getElementById('pdTitle')) return;
+    const live = window.AIRGUARD.currentEnvironment || {};
+    const liveMetric = pattern.id === 'humidity' ? live.humidity_pct : pattern.id === 'aqi' ? live.aqi : pattern.id === 'temp' ? live.temperature_c : null;
+    const liveValue = liveMetric == null || String(pattern.todayVal).toLowerCase().includes('current live value') ? (liveMetric == null ? 'Latest saved value' : pattern.id === 'humidity' ? `${Math.round(liveMetric)}%` : pattern.id === 'aqi' ? `${Math.round(liveMetric)}` : `${Math.round(liveMetric)}°C`) : pattern.todayVal;
+    const values = { pdTitle: pattern.title, pdMatching: pattern.matchingDays, pdLower: pattern.impactedDays, pdStrength: pattern.strength, pdConfidence: `${pattern.confidence}%`, pdFound: pattern.foundText, pdContext: `${pattern.description} ${pattern.whyFlaggedText} This is an observational comparison from your personal records. It does not establish that one condition caused the other.`, pdToday: liveValue, pdBaseline: pattern.baselineVal, pdDiff: pattern.deltaVal };
+    Object.entries(values).forEach(([id, value]) => { const element = document.getElementById(id); if (element) element.textContent = value; });
+    const todayLabel = document.getElementById('pdTodayLabel');
+    if (todayLabel) todayLabel.textContent = pattern.id === 'humidity' ? "Today's humidity" : pattern.id === 'aqi' ? "Today's AQI" : pattern.id === 'temp' ? "Today's temperature" : "Latest saved value";
+    const sources = document.getElementById('pdSources');
+    if (sources) {
+      const links = pattern.id === 'humidity' ? [['Humidity and heat', 'Learn how heat and humidity can affect everyday comfort.', 'https://www.who.int/news-room/fact-sheets/detail/heat-and-health'], ['Heat safety basics', 'Practical ways to reduce heat exposure and stay comfortable.', 'https://www.cdc.gov/heat-health/about/index.html']] : pattern.id === 'aqi' ? [['Air Quality Index guide', 'Understand what AQI categories mean and how to read them.', 'https://www.airnow.gov/aqi/'], ['Outdoor air pollution and health', 'General health information about outdoor air pollution.', 'https://www.who.int/news-room/fact-sheets/detail/ambient-(outdoor)-air-quality-and-health']] : pattern.id === 'temp' ? [['Heat and health', 'Learn why unusually hot conditions can increase heat strain.', 'https://www.who.int/news-room/fact-sheets/detail/heat-and-health'], ['CDC heat prevention', 'Simple steps for planning around hot weather.', 'https://www.cdc.gov/heat-health/about/index.html']] : [['Sleep and health', 'Learn why sleep duration matters for energy and wellbeing.', 'https://www.cdc.gov/sleep/about/index.html']];
+      sources.innerHTML = `${links.map(link => `<a href="${link[2]}" target="_blank" rel="noopener" style="display:block;padding:12px 14px;border:1px solid var(--border-soft);border-radius:10px;text-decoration:none;background:var(--card-bg);"><span style="display:block;font-weight:800;color:var(--text);">${link[0]} ↗</span><span style="display:block;margin-top:4px;font-size:12px;line-height:1.5;color:var(--text-secondary);">${link[1]}</span></a>`).join('')}<p class="secondary-text" style="font-size:12px;line-height:1.5;margin-top:2px;">These links explain the environmental topic generally. The AIRGUARD finding above is calculated only from your saved records.</p>`;
+    }
+    const tbody = document.getElementById('similarDaysTableBody');
+    if (tbody) tbody.innerHTML = pattern.similarDays?.length ? pattern.similarDays.map(row => `<tr style="border-top:1px solid var(--border-soft);"><td style="padding:12px 8px;font-weight:700;">${row.date}</td><td style="padding:12px 8px;">${row.temp}</td><td style="padding:12px 8px;font-weight:700;color:var(--blue-fg);">${row.hum}</td><td style="padding:12px 8px;">${row.aqi}</td><td style="padding:12px 8px;font-weight:700;color:var(--purple-fg);">${row.energy}</td><td style="padding:12px 8px;">${row.comfort}</td><td style="padding:12px 8px;color:var(--text-secondary);">${row.symptoms}</td></tr>`).join('') : '<tr><td colspan="7" style="padding:16px;text-align:center;">Not enough matching records yet.</td></tr>';
+  }
+
+  function renderPatternSurfaces(data, forceRefresh = false) {
+    const snapshot = getPatternSnapshot(data, forceRefresh);
+    const patterns = snapshot.patterns || [];
+    const storedSnapshot = data?.profile?.patternSnapshot;
+    if (data?.uid && storedSnapshot?.date !== snapshot.date) {
+      window.AIRGUARD_FIREBASE?.currentUser?.() && window.AIRGUARD_FIREBASE.saveProfile(window.AIRGUARD_FIREBASE.currentUser(), { patternSnapshot: snapshot }).catch(error => console.warn('Could not persist daily pattern snapshot', error));
+    }
+    window.AIRGUARD.PATTERNS = Object.fromEntries(patterns.map(pattern => [pattern.id, pattern]));
+    const summary = document.querySelector('.ai-summary-body');
+    if (summary) summary.innerHTML = patterns.length ? patterns.slice(0, 3).map(pattern => `<strong>${pattern.title}.</strong> ${pattern.description}`).join(' ') : 'AIRGUARD needs at least three saved check-ins with environmental snapshots before it can identify a personal pattern.';
+    const generated = document.querySelector('.ai-refresh-row');
+    if (generated) generated.innerHTML = `Generated from your saved records · ${new Date(snapshot.generatedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`;
+    const modalContent = document.getElementById('modalContent');
+    if (modalContent) modalContent.innerHTML = patterns.length ? patterns.slice(0, 3).map(pattern => `<p><strong>${pattern.title}.</strong> ${pattern.description} ${pattern.impactedDays} of ${pattern.matchingDays} matching saved days; confidence ${pattern.confidence}%.</p>`).join('') : '<p>There is not enough saved data to generate a personal summary yet.</p>';
+    document.querySelectorAll('.learning-card').forEach(card => { card.style.display = data?.uid ? 'none' : ''; });
+    const cards = Array.from(document.querySelectorAll('.pattern-card'));
+    cards.forEach((card, index) => {
+      const pattern = patterns[index];
+      card.style.display = pattern ? '' : 'none';
+      if (!pattern) return;
+      const title = card.querySelector('.pattern-title');
+      const badge = card.querySelector('.pattern-badge');
+      const description = card.querySelector('.pattern-description');
+      if (title) title.innerHTML = `<span style="width:10px;height:10px;border-radius:50%;background:${pattern.color};display:inline-block;flex-shrink:0;"></span>${pattern.title}`;
+      if (badge) { badge.textContent = pattern.strength; badge.style.background = pattern.badgeBg; badge.style.color = pattern.badgeColor; }
+      if (description) description.textContent = pattern.description;
+      const stats = card.querySelectorAll('.pattern-stats .v');
+      if (stats[0]) stats[0].textContent = `${pattern.impactedDays} of ${pattern.matchingDays}`;
+      if (stats[1]) stats[1].textContent = pattern.id === 'aqi' ? `${Math.round(pattern.impactedDays / pattern.matchingDays * 100)}%` : `${average(personalRows(data), pattern.id === 'temp' ? 'comfort' : 'energy')?.toFixed(1) || '—'} / 10`;
+      if (stats[2]) stats[2].textContent = pattern.id === 'temp' ? `${average(personalRows(data), 'comfort')?.toFixed(1) || '—'} / 10` : `${pattern.baselineVal}`;
+      const fill = card.querySelector('.confidence-bar-fill');
+      if (fill) { fill.style.width = `${pattern.confidence}%`; fill.style.background = pattern.color; }
+      const confidence = card.querySelector('.confidence-pct');
+      if (confidence) confidence.textContent = `${pattern.confidence}%`;
+      const link = card.querySelector('a');
+      if (link) { link.href = `pattern-detail.html?p=${pattern.id}`; link.textContent = 'View all matching days →'; }
+    });
+    const empty = document.getElementById('patternDataEmpty');
+    if (!patterns.length && !empty) {
+      const firstCard = cards[0];
+      if (firstCard?.parentElement) { const message = document.createElement('div'); message.id = 'patternDataEmpty'; message.className = 'card'; message.style.marginBottom = '16px'; message.innerHTML = '<strong>Not enough linked environmental data yet.</strong><p class="secondary-text" style="margin-top:6px;">AIRGUARD is pairing your saved check-ins with the real environmental history for those dates. Patterns will appear when the comparison has enough evidence.</p>'; firstCard.parentElement.insertBefore(message, firstCard); }
+    } else if (patterns.length) empty?.remove();
+    const urlPattern = new URLSearchParams(window.location.search).get('p');
+    renderPatternDetail((urlPattern && window.AIRGUARD.PATTERNS[urlPattern]) || patterns[0]);
+    return snapshot;
+  }
+
+  async function refreshPatternsWithEnvironment(data) {
+    const checkins = data?.checkins || [];
+    const missing = checkins.filter(item => !item.environment || item.environment.temperature_c == null && item.environment.humidity_pct == null && item.environment.aqi == null);
+    if (!missing.length || !window.AIRGUARD.fetchEnvironmentHistory) return;
+    const location = data.profile?.location || getSavedLocation();
+    try {
+      const history = await window.AIRGUARD.fetchEnvironmentHistory(location.lat, location.lng, Math.min(90, Math.max(7, checkins.length + 2)));
+      const byDate = Object.fromEntries((history || []).map(item => [String(item.date).slice(0, 10), item]));
+      const enriched = { ...data, checkins: checkins.map(item => {
+        if (item.environment && (item.environment.temperature_c != null || item.environment.humidity_pct != null || item.environment.aqi != null)) return item;
+        const date = localDateKey(item.createdAt || item.timestamp);
+        const environment = byDate[date];
+        if (!environment) return item;
+        return { ...item, environment: { temperature_c: environment.temp, humidity_pct: environment.humidity, aqi: environment.aqi, location: location.label, source: 'Open-Meteo historical conditions' } };
+      }) };
+      const linked = enriched.checkins.filter(item => item.environment?.temperature_c != null || item.environment?.humidity_pct != null || item.environment?.aqi != null).length;
+      if (linked >= 3) {
+        daysData = buildUserDays(enriched);
+        window.AIRGUARD.daysData = daysData;
+        renderPatternSurfaces(enriched, true);
+      }
+    } catch (error) { console.warn('Could not pair check-ins with environmental history', error); }
+  }
+
+  async function populateMockData(days = 7, onProgress = () => {}) {
+    const user = window.AIRGUARD_FIREBASE?.currentUser?.();
+    if (!user) throw new Error('Please sign in before populating this account.');
+    const total = days === 30 ? 30 : 7;
+    const location = getSavedLocation();
+    const now = Date.now();
+    for (let index = total - 1; index >= 0; index -= 1) {
+      const date = new Date(now - index * 86400000);
+      const wave = Math.sin(index * 1.7);
+      const humidity = Math.round(clamp(63 + wave * 15 + Math.random() * 10, 35, 90));
+      const temp = round1(clamp(29 + wave * 4 + Math.random() * 5, 20, 40));
+      const aqi = Math.round(clamp(82 + wave * 32 + Math.random() * 42, 25, 190));
+      const energy = round1(clamp(7.4 - (humidity > 70 ? 1.5 : 0) - (aqi > 120 ? .5 : 0) + (Math.random() - .5) * 1.2, 2, 9.5));
+      const comfort = round1(clamp(7.3 - (temp > 33 ? 1.4 : 0) - (humidity > 75 ? .5 : 0) + (Math.random() - .5) * 1.1, 2, 9.5));
+      const symptoms = [];
+      if (humidity > 70 && Math.random() > .45) symptoms.push('Fatigue');
+      if (aqi > 120 && Math.random() > .4) symptoms.push('Congestion');
+      if (temp > 33 && Math.random() > .55) symptoms.push('Headache');
+      await window.AIRGUARD_FIREBASE.saveCheckin(user, {
+        createdAt: date.toISOString(), energy, comfort, sleep: round1(clamp(6.2 + Math.random() * 1.7, 4.5, 8.5)), movement: Math.round(25 + Math.random() * 45), symptoms,
+        activity: Math.random() > .45 ? 'Outside' : 'Indoors', notes: 'Generated sample for testing', isMockData: true,
+        environment: { temperature_c: temp, humidity_pct: humidity, aqi, pm2_5: Math.round(aqi * .45), pm10: Math.round(aqi * .85), uv_index: temp > 33 ? 8 : 5, pollen_level: humidity > 72 ? 'Moderate' : 'Low', location: location.label }
+      });
+      onProgress(total - index, total);
+    }
+    localStorage.removeItem(patternCacheKey({ uid: user.uid }));
+    await window.AIRGUARD_FIREBASE.saveProfile(user, { patternSnapshot: null, patternRefreshAt: new Date().toISOString() });
+    const cached = window.AIRGUARD_FIREBASE.getCachedData?.();
+    if (cached) renderPatternSurfaces(cached);
+    return total;
+  }
+
   // Shared location state for onboarding + environment map selectors.
   const LOCATION_STORAGE_KEY = "airguard_location";
 
@@ -327,6 +569,7 @@
     getSavedLocation,
     saveLocation,
     reverseGeocode,
+    populateMockData,
     fetchCurrentConditions,
     fetchHourlyForecast,
     loadCurrentEnvironment
@@ -390,6 +633,11 @@
     window.AIRGUARD.yesterdayEntry = yesterdayEntry;
     applyUserMode(data);
   });
+  window.addEventListener('airguard-current-environment', () => {
+    const key = new URLSearchParams(window.location.search).get('p');
+    const pattern = key && window.AIRGUARD?.PATTERNS?.[key];
+    if (pattern) renderPatternDetail(pattern);
+  });
 
   function applyUserMode(data) {
     if (localStorage.getItem('airguard_demo') === 'true' || !data) return;
@@ -427,9 +675,7 @@
     const dashboardActivities = document.getElementById('dashboardActivityList');
     if (dashboardActivities) dashboardActivities.innerHTML = activities.length ? activities.slice(0, 3).map(item => formatActivity(item, true)).join('') : '<div class="secondary-text" style="padding:10px 0;">No activities yet. Your saved activity plans will appear here.</div>';
 
-    // These surfaces previously contained prewritten sample insights. They
-    // are intentionally absent for signed-in users until real backend data
-    // exists; only the explicit demo session may display them.
+    // Render personal evidence only from this user's saved records.
     const wellnessGrid = document.getElementById('dashboardWellnessGrid');
     if (wellnessGrid) {
       const checkins = data.checkins || [];
@@ -446,41 +692,37 @@
         return `<div class="card stat-card"><div class="stat-label">${label}</div><div class="stat-value">${display}</div><div class="stat-bar-track"><div class="stat-bar-fill" style="width:${width}%;background:${color};"></div></div><div class="stat-caption">${value == null ? 'Enter data to view stats' : 'From your latest check-in'}</div></div>`;
       }).join('');
     }
+    const snapshot = renderPatternSurfaces(data);
+    refreshPatternsWithEnvironment(data);
     const dashboardPattern = document.getElementById('dashboardPersonalInsight');
     if (dashboardPattern) {
+      const pattern = snapshot.patterns?.[0];
       const patternBody = dashboardPattern.querySelector('.body-text');
       const patternAverage = dashboardPattern.querySelector('.avg-highlight-line');
-      const comparisonBars = dashboardPattern.querySelector('.cmp-bar-container');
-      const evidenceButton = dashboardPattern.querySelector('[data-open-modal="evidenceModal"]');
-      if (patternBody) patternBody.textContent = 'Personal pattern insights will appear here after AIRGUARD has enough saved history to compare your environment and check-ins.';
-      if (patternAverage) patternAverage.textContent = 'No pattern evidence is available yet.';
-      if (comparisonBars) comparisonBars.style.display = 'none';
-      if (evidenceButton) evidenceButton.style.display = 'none';
+      if (pattern) {
+        if (patternBody) patternBody.textContent = pattern.description;
+        if (patternAverage) patternAverage.textContent = `${pattern.impactedDays} of ${pattern.matchingDays} matching saved days · ${pattern.confidence}% confidence`;
+        const evidence = dashboardPattern.querySelector('[data-open-modal="evidenceModal"]');
+        if (evidence) { evidence.style.display = ''; evidence.textContent = 'Inspect evidence →'; evidence.onclick = () => { window.location.href = `pattern-detail.html?p=${pattern.id}`; }; }
+      } else {
+        if (patternBody) patternBody.textContent = 'Save more check-ins with live environmental snapshots and AIRGUARD will look for personal patterns.';
+        if (patternAverage) patternAverage.textContent = 'Not enough evidence yet.';
+      }
     }
     const weeklyPattern = document.getElementById('weeklyPatternCard');
     renderWeeklySummary(data);
     if (weeklyPattern) {
+      const pattern = snapshot.patterns?.[0];
       const title = weeklyPattern.querySelector('.card-heading');
       const description = weeklyPattern.querySelector('.body-text');
-      if (title) title.textContent = 'Pattern name pending';
-      if (description) description.textContent = 'Description will appear after enough personal check-ins are recorded.';
-      weeklyPattern.querySelectorAll('.pattern-meta-item .v').forEach(item => item.textContent = 'Not available yet');
+      if (title) title.textContent = pattern?.title || 'Not enough personal data yet';
+      if (description) description.textContent = pattern?.description || 'Save more check-ins with environmental snapshots to build your weekly pattern history.';
+      weeklyPattern.querySelectorAll('.pattern-meta-item .v').forEach((item, index) => item.textContent = pattern ? [pattern.matchingDays, pattern.strength, pattern.confidence + '%'][index] || '—' : '—');
       const evidence = weeklyPattern.querySelector('a');
-      if (evidence) evidence.textContent = 'Evidence unavailable yet';
+      if (evidence) { evidence.textContent = pattern ? 'Inspect evidence →' : 'Evidence needs more data'; if (pattern) evidence.href = `pattern-detail.html?p=${pattern.id}`; }
     }
     document.getElementById('dashboardSuggestionCard')?.remove();
     document.getElementById('environmentBaselineCard')?.remove();
-    document.querySelectorAll('.pattern-card').forEach(card => {
-      const title = card.querySelector('.pattern-title');
-      if (title) title.textContent = 'Pattern name pending';
-      const badge = card.querySelector('.pattern-badge');
-      if (badge) badge.textContent = 'Awaiting data';
-      card.querySelectorAll('.pattern-description').forEach(el => el.textContent = 'Description will appear after enough personal check-ins are recorded.');
-      card.querySelectorAll('.pattern-stats .v, .confidence-pct').forEach(el => el.textContent = 'Not available yet');
-      card.querySelectorAll('.confidence-bar-fill').forEach(el => el.style.width = '0%');
-      const link = card.querySelector('a');
-      if (link) link.textContent = 'Evidence unavailable yet';
-    });
     document.querySelectorAll('.ai-summary-card .ai-summary-body, .ai-summary-card .ai-refresh-row, .ai-prompts-row').forEach(el => el.textContent = 'Awaiting personal data');
     ['recentPatternChart', 'env7DayChart', 'weekEnvChart'].forEach(id => {
       const canvas = document.getElementById(id);
@@ -753,6 +995,8 @@
       );
 
       console.log("Current environment:", conditions);
+      window.AIRGUARD.currentEnvironment = conditions;
+      window.dispatchEvent(new CustomEvent('airguard-current-environment', { detail: conditions }));
 
       return conditions;
     } catch (error) {

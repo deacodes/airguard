@@ -294,7 +294,9 @@
     document.addEventListener('DOMContentLoaded', () => {
       // Chart.js default setup
       Chart.defaults.font.family = "'DM Sans', sans-serif";
-      Chart.defaults.color = "#8A939A";
+      const environmentDarkMode = document.body.classList.contains('dark-theme');
+      const environmentGridColor = environmentDarkMode ? '#30363d' : '#F0F5F4';
+      Chart.defaults.color = environmentDarkMode ? '#8B949E' : '#8A939A';
 
       const days = window.AIRGUARD ? window.AIRGUARD.daysData : [];
       const last7 = days.slice(-7);
@@ -357,7 +359,7 @@
             },
             scales: {
               x: { grid: { display: false } },
-              y: { position: "left", min: 30, max: 180, title: { display: true, text: "AQI", font: { size: 11 } }, grid: { color: "#F0F5F4" } },
+              y: { position: "left", min: 30, max: 180, title: { display: true, text: "AQI", font: { size: 11 } }, grid: { color: environmentGridColor } },
               y1: { position: "right", min: 10, max: 100, title: { display: true, text: "Temp / Humidity", font: { size: 11 } }, grid: { display: false } }
             }
           }

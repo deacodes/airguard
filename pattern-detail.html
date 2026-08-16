@@ -82,6 +82,12 @@
         <p class="page-subtitle">Evidence Dossier · 30-Day Observational Correlation</p>
       </div>
 
+      <div class="card" style="margin-bottom:20px;">
+        <h3 class="card-heading" style="margin-bottom:8px;">What AIRGUARD found</h3>
+        <p class="body-text" id="pdFound" style="font-size:14.5px;">Your personal evidence summary will appear here when your records are loaded.</p>
+        <p class="secondary-text" id="pdContext" style="margin-top:10px; font-size:13px;">This is an observational comparison from your saved records, not a medical conclusion.</p>
+      </div>
+
       <!-- TOP 4 SUMMARY STAT CARDS -->
       <div class="grid grid-4" style="margin-bottom:20px;">
         <div class="card stat-card">
@@ -124,18 +130,17 @@
         <canvas id="patternDetailChart" height="95"></canvas>
       </div>
 
-      <!-- WHAT AIRGUARD FOUND SECTION -->
-      <div class="card" style="margin-bottom:20px;">
-        <h3 class="card-heading" style="margin-bottom:8px;">What AIRGUARD found</h3>
-        <p class="body-text" id="pdFound" style="font-size:14.5px;">On days where humidity was above your personal baseline (56%), you reported lower energy on 8 of 11 occasions.</p>
-      </div>
-
       <!-- WHY WAS THIS FLAGGED SECTION -->
       <div class="card" style="margin-bottom:20px;">
         <h3 class="card-heading" style="margin-bottom:12px;">Why was this flagged?</h3>
-        <div class="modal-datarow"><span class="k">Today's humidity</span><span class="v" id="pdToday">72%</span></div>
+        <div class="modal-datarow"><span class="k" id="pdTodayLabel">Today's humidity</span><span class="v" id="pdToday">72%</span></div>
         <div class="modal-datarow"><span class="k">Your personal baseline</span><span class="v" id="pdBaseline">56%</span></div>
         <div class="modal-datarow"><span class="k">Difference</span><span class="v" style="color:var(--purple-fg);" id="pdDiff">+28%</span></div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <h3 class="card-heading" style="margin-bottom:8px;">Explore the context</h3>
+        <div id="pdSources" style="display:grid;gap:10px;"></div>
       </div>
 
       <!-- SIMILAR DAYS HISTORICAL EVIDENCE TABLE -->
@@ -184,7 +189,9 @@
 document.addEventListener('DOMContentLoaded', () => {
   // Chart.js default setup
   Chart.defaults.font.family = "'DM Sans', sans-serif";
-  Chart.defaults.color = "#8A939A";
+  const patternDarkMode = document.body.classList.contains('dark-theme');
+  const patternGridColor = patternDarkMode ? '#30363d' : '#F0F5F4';
+  Chart.defaults.color = patternDarkMode ? '#8B949E' : '#8A939A';
 
   const urlParams = new URLSearchParams(window.location.search);
   const patternKey = urlParams.get('p') || 'humidity';
@@ -272,7 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         scales: {
           x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } },
-          y: { position: "left", title: { display: true, text: "Humidity (%)", font: { size: 11 } }, grid: { color: "#F0F5F4" } },
+          y: { position: "left", title: { display: true, text: "Humidity (%)", font: { size: 11 } }, grid: { color: patternGridColor } },
           y1: { position: "right", min: 1, max: 10, title: { display: true, text: "Energy", font: { size: 11 } }, grid: { display: false } }
         }
       }

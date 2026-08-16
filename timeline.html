@@ -346,7 +346,9 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   Chart.defaults.font.family = "'DM Sans', sans-serif";
-  Chart.defaults.color = "#8A939A";
+  const timelineDarkMode = document.body.classList.contains('dark-theme');
+  const timelineGridColor = timelineDarkMode ? '#30363d' : '#F0F5F4';
+  Chart.defaults.color = timelineDarkMode ? '#8B949E' : '#8A939A';
 
   const days = window.AIRGUARD ? window.AIRGUARD.daysData : [];
   let timelineChart = null;
@@ -421,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
           y: {
             position: "left", min: 1, max: 10,
             title: { display: true, text: "Wellness (1–10)", font: { size: 11 } },
-            grid: { color: "#F0F5F4" }
+            grid: { color: timelineGridColor }
           },
           y1: {
             position: "right", min: 30, max: 190,
