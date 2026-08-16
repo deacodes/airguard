@@ -87,7 +87,7 @@
             <path
               d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" />
           </svg>
-          AIRGUARD AI
+        AirGuard AI
         </a>
       </nav>
       <div class="sidebar-bottom">
@@ -129,9 +129,9 @@
           <div class="privacy-row">
             <div>
               <div style="font-weight:700; font-size:14px;">Current Location</div>
-              <div class="secondary-text" style="font-size:12px;">Jaipur, India · Asia/Kolkata</div>
+              <div class="secondary-text" id="settingsLocationLabel" style="font-size:12px;">Loading saved location…</div>
             </div>
-            <a href="environment.html" class="btn btn-outline btn-sm">Change location</a>
+            <a href="environment.html#location" class="btn btn-outline btn-sm">Change location</a>
           </div>
         </div>
 
@@ -225,6 +225,21 @@
             <button class="btn btn-outline btn-sm" id="deleteHistoryBtn">Delete History</button>
           </div>
 
+          <div class="privacy-row" style="align-items:flex-start; gap:18px;">
+            <div>
+              <div style="font-weight:700; font-size:14px;">Populate this account with mock data</div>
+              <div class="secondary-text" style="font-size:12px; max-width:560px;">Add clearly marked sample check-ins and activities to explore graphs, the timeline, and pattern analysis. This data is saved to your account and can be removed with Delete Wellness History.</div>
+              <div id="mockDataStatus" role="status" aria-live="polite" class="secondary-text" style="font-size:12px; margin-top:7px; min-height:16px;"></div>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center; flex-shrink:0;">
+              <select id="mockDataDays" aria-label="Mock data duration" style="padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:var(--card-bg); color:var(--text);">
+                <option value="7">7 days</option>
+                <option value="30">30 days</option>
+              </select>
+              <button class="btn btn-outline btn-sm" id="populateMockDataBtn">Populate</button>
+            </div>
+          </div>
+
           <div class="privacy-row">
             <div>
               <div style="font-weight:700; font-size:14px;">Delete All AIRGUARD Data</div>
@@ -265,9 +280,51 @@
     </div>
   </div>
 
-  <script src="js/main.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase.js"></script>
+<script src="js/main.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
+      const renderSettingsLocation = () => {
+        const target = document.getElementById('settingsLocationLabel');
+        const location = window.AIRGUARD?.getSavedLocation?.();
+        if (target && location?.label) target.textContent = location.label;
+      };
+      renderSettingsLocation();
+      window.addEventListener('airguard-data-ready', renderSettingsLocation);
+
+      const applyPreferences = (data) => {
+        const preferences = data?.profile?.preferences || {};
+        const tempUnit = document.getElementById('tempUnitSelect');
+        const distUnit = document.getElementById('distUnitSelect');
+        if (tempUnit && preferences.tempUnit) tempUnit.value = preferences.tempUnit;
+        if (distUnit && preferences.distanceUnit) distUnit.value = preferences.distanceUnit;
+        document.querySelectorAll('[data-switch]').forEach(btn => {
+          const saved = preferences[`notification_${btn.dataset.switch}`];
+          if (typeof saved === 'boolean') btn.classList.toggle('on', saved);
+        });
+      };
+      const cachedProfile = window.AIRGUARD_FIREBASE?.getCachedData?.() || {};
+      const preferences = cachedProfile.profile?.preferences || {};
+      const tempUnit = document.getElementById('tempUnitSelect');
+      const distUnit = document.getElementById('distUnitSelect');
+      if (tempUnit && preferences.tempUnit) tempUnit.value = preferences.tempUnit;
+      if (distUnit && preferences.distanceUnit) distUnit.value = preferences.distanceUnit;
+      applyPreferences(cachedProfile);
+      window.addEventListener('airguard-data-ready', event => applyPreferences(event.detail));
+      const savePreference = async (key, value) => {
+        const user = window.AIRGUARD_FIREBASE?.currentUser?.();
+        if (!user) return;
+        const current = window.AIRGUARD_FIREBASE.getCachedData?.()?.profile || {};
+        try { await window.AIRGUARD_FIREBASE.saveProfile(user, { preferences: { ...(current.preferences || {}), [key]: value } }); }
+        catch (error) { window.AIRGUARD.showToast('Could not save this setting to Firebase'); console.warn(error); }
+      };
+      tempUnit?.addEventListener('change', () => savePreference('tempUnit', tempUnit.value));
+      distUnit?.addEventListener('change', () => savePreference('distanceUnit', distUnit.value));
+
       // Theme switch logic
       const themeSwitch = document.getElementById('themeSwitch');
       if (themeSwitch) {
@@ -279,6 +336,7 @@
           const isDark = themeSwitch.classList.contains('on');
           document.body.classList.toggle('dark-theme', isDark);
           localStorage.setItem('airguard_theme', isDark ? 'dark' : 'light');
+          savePreference('theme', isDark ? 'dark' : 'light');
           window.AIRGUARD.showToast(`Theme switched to ${isDark ? 'Dark' : 'Light'}`);
         });
       }
@@ -289,18 +347,55 @@
           btn.classList.toggle('on');
           const name = btn.dataset.switch;
           const state = btn.classList.contains('on') ? 'enabled' : 'disabled';
+          savePreference(`notification_${name}`, state === 'enabled');
           window.AIRGUARD.showToast(`Notification ${state}`);
         });
       });
 
       // Delete History
+      const signOutBtn = document.getElementById('signOutBtn');
+      if (signOutBtn) {
+        signOutBtn.addEventListener('click', async (event) => {
+          event.preventDefault();
+          const finish = () => { localStorage.removeItem('airguard_user_data'); localStorage.removeItem('airguard_demo'); window.location.href = 'index.html'; };
+          try {
+            if (window.AIRGUARD_FIREBASE) await window.AIRGUARD_FIREBASE.signOut();
+          } finally { finish(); }
+        });
+      }
+
       const deleteHistoryBtn = document.getElementById('deleteHistoryBtn');
       if (deleteHistoryBtn) {
-        deleteHistoryBtn.addEventListener('click', () => {
+        deleteHistoryBtn.addEventListener('click', async () => {
           if (confirm("Clear all recorded check-ins?")) {
-            localStorage.removeItem('airguard_custom_logs');
-            window.AIRGUARD.showToast("Wellness check-in history cleared");
+            const user = window.AIRGUARD_FIREBASE?.currentUser?.();
+            try {
+              if (!user) throw new Error('Please sign in before deleting Firebase history.');
+              const count = await window.AIRGUARD_FIREBASE.deleteCheckins(user);
+              await window.AIRGUARD_FIREBASE.saveProfile(user, { patternSnapshot: null });
+              localStorage.removeItem('airguard_custom_logs');
+              window.AIRGUARD.showToast(`${count} check-in${count === 1 ? '' : 's'} deleted from Firebase`);
+            } catch (error) { window.AIRGUARD.showToast(error.message || 'Could not delete check-ins from Firebase'); }
           }
+        });
+      }
+
+      const populateBtn = document.getElementById('populateMockDataBtn');
+      const populateDays = document.getElementById('mockDataDays');
+      const populateStatus = document.getElementById('mockDataStatus');
+      if (populateBtn) {
+        populateBtn.addEventListener('click', async () => {
+          populateBtn.disabled = true;
+          const total = Number(populateDays?.value || 7);
+          if (populateStatus) populateStatus.textContent = 'Generating and saving sample records…';
+          try {
+            await window.AIRGUARD.populateMockData(total, (current, count) => { if (populateStatus) populateStatus.textContent = `Saving sample records… ${current}/${count}`; });
+            if (populateStatus) populateStatus.textContent = `Saved ${total} sample days and activity plans. Your patterns have been refreshed.`;
+            window.AIRGUARD.showToast('Mock data saved and pattern analysis refreshed');
+          } catch (error) {
+            if (populateStatus) populateStatus.textContent = error.message || 'Could not save mock data.';
+            window.AIRGUARD.showToast(error.message || 'Could not save mock data');
+          } finally { populateBtn.disabled = false; }
         });
       }
 

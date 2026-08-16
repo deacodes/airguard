@@ -50,7 +50,7 @@
       </a>
       <a href="ai.html" class="nav-link">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
-        AIRGUARD AI
+        AirGuard AI
       </a>
     </nav>
     <div class="sidebar-bottom">
@@ -107,10 +107,11 @@
             <input type="text" id="actLocation" value="Jaipur">
           </div>
         </div>
+        <p class="secondary-text" style="margin-top:16px;">Choose what you are about to do, when, and where. Press <b>Start Activity &amp; Save</b> to record it with the live conditions at your location.</p>
 
         <div style="margin-top:18px;">
           <div class="section-heading" style="margin-bottom:8px;">Suggested Windows Today</div>
-          <div class="forecast-window-grid">
+          <div class="forecast-window-grid" id="activityForecastWindows">
             <div class="time-slot-card active" data-time="14:00" data-temp="35°C" data-hum="74%" data-aqi="138" data-rec="false">
               <b>2:00 PM</b>
               <span>35°C · 74% · AQI 138</span>
@@ -155,7 +156,7 @@
       </div>
 
       <!-- PERSONAL CONTEXT & SMART SUGGESTION CARD -->
-      <div class="card insight-card" style="margin-bottom:24px;">
+      <div class="card insight-card" id="activityPersonalContext" style="margin-bottom:24px;">
         <div class="insight-top">
           <span class="insight-icon-badge">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
@@ -174,7 +175,8 @@
 
         <div style="display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;">
           <button class="btn btn-outline" id="actChangeTimeBtn">Switch to 6:30 PM window</button>
-          <button class="btn btn-dark" id="actSavePlanBtn">Save to Activity Plan</button>
+          <button class="btn btn-dark" id="actSavePlanBtn">Start Activity &amp; Save</button>
+          <div id="activitySaveStatus" role="status" aria-live="polite" style="margin-top:8px; min-height:18px; flex-basis:100%; font-size:12px; color:var(--text-secondary);"></div>
         </div>
       </div>
 
@@ -186,53 +188,440 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase.js"></script>
 <script src="js/main.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const timeCards = document.querySelectorAll('.time-slot-card');
+
+  const timeCardsContainer = document.getElementById('activityForecastWindows');
   const dispTemp = document.getElementById('dispTemp');
   const dispHum = document.getElementById('dispHumidity');
   const dispAqi = document.getElementById('dispAqi');
+  const dispTempDelta = document.getElementById('dispTempDelta');
+  const dispHumDelta = document.getElementById('dispHumDelta');
+  const dispAqiDelta = document.getElementById('dispAqiDelta');
   const timeInput = document.getElementById('actTime');
+  const durationInput = document.getElementById('actDuration');
   const insightLine = document.getElementById('actInsightLine');
   const suggestionText = document.getElementById('actSuggestionText');
+  const changeBtn = document.getElementById('actChangeTimeBtn');
+  const pastList = document.getElementById('pastActivitiesList');
+  const BASELINE = window.AIRGUARD.BASELINE;
 
-  function updateSlot(card) {
-    timeCards.forEach(c => c.classList.remove('active'));
+  let aiContextTimer = null;
+
+function generateActivityAIContext() {
+  const context = window.AIRGUARD.activityContext;
+
+  if (!context) return;
+
+  // Cancel the previous scheduled AI request
+  clearTimeout(aiContextTimer);
+
+  // Wait until the user has stopped changing the activity window
+  aiContextTimer = setTimeout(async () => {
+    try {
+      // Optional: show a subtle loading state
+      if (insightLine) {
+        insightLine.textContent = 'AIRGUARD is analyzing your selected activity window…';
+      }
+
+      const response = await fetch('http://localhost:5001/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          question:
+            'Give a short personal-context explanation for this planned activity. Compare the selected conditions with the user’s comfortable activity history and explain whether this is a favorable window. Mention one simple suggestion if appropriate.',
+
+          current_conditions: {
+            temperature_c: context.temperature,
+            humidity_pct: context.humidity,
+            aqi: context.aqi
+          },
+
+          baseline: {
+            temp: context.baseline_temperature,
+            humidity: context.baseline_humidity,
+            aqi: context.baseline_aqi
+          },
+
+          patterns: [],
+
+          activity_context: context
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`AI request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.reply) {
+        throw new Error('AI returned an empty response');
+      }
+
+      insightLine.innerHTML = window.AIRGUARD.sanitizeAIHtml(data.reply);
+
+    } catch (error) {
+      console.warn('Activity AI unavailable:', error);
+
+      // Don't destroy the existing local/deterministic explanation
+      // if the AI request fails.
+    }
+  }, 600);
+}
+  // ---------------------------------------------------------------------
+  // Past activities (unchanged)
+  // ---------------------------------------------------------------------
+  function renderPastActivities(data) {
+    const activities = data?.activities || [];
+    if (!pastList) return;
+    if (!activities.length) { pastList.textContent = 'No activities recorded yet.'; return; }
+    pastList.innerHTML = activities.map(item => `<div style="padding:10px 0; border-bottom:1px solid var(--border-soft);"><b>${item.activity || 'Activity'}</b> · ${item.duration || '—'} · ${item.plannedTime || '—'}<br><span class="secondary-text" style="font-size:12px;">${new Date(item.createdAt).toLocaleString()} · ${item.location || 'Saved location'}</span></div>`).join('');
+  }
+  renderPastActivities(window.AIRGUARD.getUserData?.());
+  window.addEventListener('airguard-data-ready', event => renderPastActivities(event.detail));
+
+  // ---------------------------------------------------------------------
+  // Step 1-2: fetch the hourly forecast once, cache the promise (not the
+  // resolved data) so every caller shares one fetch no matter how many
+  // times the user changes the time or duration.
+  // ---------------------------------------------------------------------
+  const location = window.AIRGUARD.getSavedLocation();
+  const hourlyForecast = window.AIRGUARD.fetchHourlyForecast(location.lat, location.lng).catch(err => {
+    console.warn('Hourly forecast unavailable:', err);
+    window.AIRGUARD.showToast('Live hourly conditions unavailable — showing example data');
+    return null; // callers treat null as "leave static/demo numbers alone"
+  });
+
+  function minutesSinceMidnight(date) { return date.getHours() * 60 + date.getMinutes(); }
+
+  function findClosestHourToDate(hours, targetDate) {
+    if (!hours || !hours.length) return null;
+    let best = null, bestDiff = Infinity;
+    for (const entry of hours) {
+      const diff = Math.abs(new Date(entry.time) - targetDate);
+      if (diff < bestDiff) { bestDiff = diff; best = entry; }
+    }
+    return best;
+  }
+
+  function parseNumber(str) {
+    if (str == null) return null;
+    const n = parseFloat(String(str).replace(/[^0-9.\-]/g, ''));
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function formatHourLabel(iso) {
+    return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+
+  function hhmmOf(iso) {
+    const d = new Date(iso);
+    return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+
+  // ---------------------------------------------------------------------
+  // Step 5: live delta captions vs baseline (replaces the fixed strings)
+  // ---------------------------------------------------------------------
+  function deltaCaption(value, baseline, unit) {
+    if (value == null || !Number.isFinite(baseline) || baseline === 0) {
+      return 'vs comfortable days: not enough data';
+    }
+    const pct = Math.round(((value - baseline) / baseline) * 100);
+    const sign = pct > 0 ? '+' : '';
+    return `${sign}${pct}% vs comfortable days (${Math.round(baseline)}${unit})`;
+  }
+
+  function updateDeltaCaptions({ temp, humidity, aqi }) {
+    if (dispTempDelta) dispTempDelta.textContent = deltaCaption(temp, BASELINE.temp, '°C');
+    if (dispHumDelta) dispHumDelta.textContent = deltaCaption(humidity, BASELINE.humidity, '%');
+    if (dispAqiDelta) dispAqiDelta.textContent = deltaCaption(aqi, BASELINE.aqi, '');
+  }
+
+  function applyConditions({ temp, humidity, aqi }) {
+    if (temp != null && dispTemp) dispTemp.textContent = `${Math.round(temp)}°C`;
+    if (humidity != null && dispHum) dispHum.textContent = `${Math.round(humidity)}%`;
+    if (aqi != null && dispAqi) dispAqi.textContent = `${Math.round(aqi)}`;
+    updateDeltaCaptions({ temp, humidity, aqi });
+  }
+
+  async function syncConditionsToSelectedTime() {
+    const hours = await hourlyForecast;
+    if (!hours) return; // no live data — leave whatever is already shown
+    const [h, m] = (timeInput.value || '14:00').split(':').map(Number);
+    const target = new Date();
+    target.setHours(h, m, 0, 0);
+    const entry = findClosestHourToDate(hours, target);
+    if (entry) applyConditions(entry);
+  }
+
+  timeInput.addEventListener('change', () => {
+    document.querySelectorAll('.time-slot-card').forEach(c => c.classList.remove('active'));
+    syncConditionsToSelectedTime();
+  });
+
+  // ---------------------------------------------------------------------
+  // Step 3-4: dynamic, duration-aware, sensible-hours-aware forecast windows
+  // ---------------------------------------------------------------------
+  const SENSIBLE_START_MIN = 5 * 60;       // 5:00 AM
+  const SENSIBLE_END_MIN = 21 * 60 + 30;   // 9:30 PM
+
+  function parseDurationMinutes(str) {
+    const match = (str || '').match(/(\d+)/);
+    return match ? Number(match[1]) : 60;
+  }
+
+  function discomfortScore({ temp, humidity, aqi }, durationMinutes) {
+    if (temp == null || humidity == null || aqi == null) return Infinity;
+    const tempDev = Math.abs(temp - BASELINE.temp) / BASELINE.temp;
+    const humDev = Math.abs(humidity - BASELINE.humidity) / BASELINE.humidity;
+    const aqiDev = Math.max(0, aqi - BASELINE.aqi) / BASELINE.aqi; // lower AQI is never bad
+    const raw = tempDev + humDev + aqiDev;
+    return raw * (durationMinutes / 60); // longer sessions amplify discomfort
+  }
+
+function pickCandidateHours(hours) {
+  if (!hours || !hours.length) return [];
+
+  const now = new Date();
+
+  // Only consider sensible outdoor activity hours.
+  const sensible = hours.filter(entry => {
+    const d = new Date(entry.time);
+    const mins = minutesSinceMidnight(d);
+
+    // Only future times
+    if (d < now) return false;
+
+    return mins >= SENSIBLE_START_MIN && mins <= SENSIBLE_END_MIN;
+  });
+
+  if (!sensible.length) return [];
+
+  // Score EVERY sensible forecast hour.
+  const durationMinutes = parseDurationMinutes(durationInput.value);
+
+  const scored = sensible.map(entry => ({
+    entry,
+    score: discomfortScore(entry, durationMinutes)
+  }));
+
+  // Pick the four most comfortable windows.
+  scored.sort((a, b) => a.score - b.score);
+
+  const bestFour = scored
+    .slice(0, 4)
+    .map(item => item.entry);
+
+  // Sort the selected windows chronologically for the UI.
+  bestFour.sort((a, b) => new Date(a.time) - new Date(b.time));
+
+  return bestFour;
+}
+
+  let lastCandidates = [];
+
+  function isSameCalendarDay(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function formatDateLabel(iso) {
+    const entryDate = new Date(iso);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    if (isSameCalendarDay(entryDate, today)) return 'Today';
+    if (isSameCalendarDay(entryDate, tomorrow)) return 'Tomorrow';
+    // Forecast only spans ~2 days, so this shouldn't normally hit — but
+    // fall back to a real date rather than showing nothing if it ever does.
+    return entryDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  }
+
+  function renderFromCandidates(candidates) {
+    if (!candidates.length || !timeCardsContainer) return null;
+    const durationMinutes = parseDurationMinutes(durationInput.value);
+    const scored = candidates.map(entry => ({ entry, score: discomfortScore(entry, durationMinutes) }));
+    const best = scored.reduce((a, b) => (b.score < a.score ? b : a), scored[0]);
+    const today = new Date();
+
+    timeCardsContainer.innerHTML = scored.map(({ entry }) => {
+      const isBest = entry === best.entry;
+      const hhmm = hhmmOf(entry.time);
+      const label = formatHourLabel(entry.time);
+      const entryDate = new Date(entry.time);
+      const dateSub = isSameCalendarDay(entryDate, today) ? '' : `<small class="slot-date">${formatDateLabel(entry.time)}</small>`;
+      const temp = entry.temp != null ? `${Math.round(entry.temp)}°C` : '—';
+      const hum = entry.humidity != null ? `${Math.round(entry.humidity)}%` : '—';
+      const aqi = entry.aqi != null ? `${Math.round(entry.aqi)}` : '—';
+      return `<div class="time-slot-card${isBest ? ' recommended' : ''}" data-iso="${entry.time}" data-time="${hhmm}" data-temp="${temp}" data-hum="${hum}" data-aqi="${aqi}" data-rec="${isBest}">
+        <b>${label}</b>${dateSub}
+        <span>${temp} · ${hum} · AQI ${aqi}</span>
+        ${isBest ? '<span class="slot-tag">Best Match</span>' : ''}
+      </div>`;
+    }).join('');
+
+    return best.entry;
+  }
+
+  function renderForecastWindows(hours) {
+    const candidates = pickCandidateHours(hours);
+    lastCandidates = candidates;
+    return renderFromCandidates(candidates);
+  }
+
+  // Event delegation: cards get replaced on every render, so binding each
+  // card individually would go stale — this is necessary, not optional.
+  timeCardsContainer?.addEventListener('click', (e) => {
+    const card = e.target.closest('.time-slot-card');
+    if (!card) return;
+    updateSlot(card, { silent: false });
+  });
+
+  durationInput.addEventListener('change', () => {
+    if (!lastCandidates.length) return; // fallback/demo cards aren't re-rankable
+    const activeCard = timeCardsContainer.querySelector('.time-slot-card.active');
+    const activeIso = activeCard?.dataset.iso;
+    renderFromCandidates(lastCandidates);
+    const stillThere = activeIso && [...timeCardsContainer.querySelectorAll('.time-slot-card')].find(c => c.dataset.iso === activeIso);
+    const target = stillThere || timeCardsContainer.querySelector('.time-slot-card.recommended');
+    if (target) updateSlot(target, { silent: true }); // programmatic reselection — no toast spam
+  });
+
+  // ---------------------------------------------------------------------
+  // Step 6: dynamic Personal Context — compares the selected window to the
+  // best available window and to baseline, instead of two fixed strings.
+  // ---------------------------------------------------------------------
+  function updatePersonalContext(selectedEntry, bestEntry, durationMinutes) {
+    if (!insightLine || !suggestionText) return;
+
+    if (!selectedEntry || !bestEntry) {
+      // No live forecast to reason about — keep the fallback/demo copy as-is.
+      changeBtn && (changeBtn.style.display = '');
+      return;
+    }
+
+    const selScore = discomfortScore(selectedEntry, durationMinutes);
+    const isBestWindow = selectedEntry.time === bestEntry.time;
+
+    insightLine.textContent = isBestWindow || selScore <= 0.15
+      ? 'These conditions closely match the conditions recorded during your previous comfortable activity sessions.'
+      : 'These conditions differ from the conditions recorded during your previous comfortable activity sessions.';
+
+    if (isBestWindow) {
+      const label = formatHourLabel(selectedEntry.time);
+      suggestionText.textContent = `${label} looks like a solid window for your ${durationMinutes}-minute session — heat and particulate levels are close to your comfortable-day baseline.`;
+      if (changeBtn) changeBtn.style.display = 'none';
+    } else {
+      const label = formatHourLabel(bestEntry.time);
+      const tempDiff = (selectedEntry.temp != null && bestEntry.temp != null) ? Math.round(selectedEntry.temp - bestEntry.temp) : null;
+      if (changeBtn) {
+        changeBtn.textContent = `Switch to ${label} window`;
+        changeBtn.style.display = '';
+      }
+      suggestionText.textContent = (tempDiff != null && tempDiff > 0)
+        ? `Consider a cooler time of day. Shifting your session to ${label} reduces thermal stress by about ${tempDiff}°C and is a closer match to your comfortable-day history.`
+        : `Shifting your session to ${label} is a closer match to the conditions on your previous comfortable activity days.`;
+    }
+  }
+
+  function bestOfCandidates(durationMinutes) {
+    if (!lastCandidates.length) return null;
+    return lastCandidates.reduce((a, b) => (discomfortScore(b, durationMinutes) < discomfortScore(a, durationMinutes) ? b : a));
+  }
+
+  // ---------------------------------------------------------------------
+  // updateSlot — shared by card clicks, "Switch to X window", and the
+  // auto-select on load. No longer needs an extra fetch: dataset values
+  // are already real once live data has loaded.
+  // ---------------------------------------------------------------------
+  let lastSelected = null; // { temp, humidity, aqi, source: 'live'|'demo', label }
+
+  function updateSlot(card, { silent } = {}) {
+    document.querySelectorAll('.time-slot-card').forEach(c => c.classList.remove('active'));
     card.classList.add('active');
 
     const time = card.dataset.time;
-    const temp = card.dataset.temp;
-    const hum = card.dataset.hum;
-    const aqi = card.dataset.aqi;
+    const temp = parseNumber(card.dataset.temp);
+    const hum = parseNumber(card.dataset.hum);
+    const aqi = parseNumber(card.dataset.aqi);
     const isRec = card.dataset.rec === 'true';
 
     timeInput.value = time;
-    dispTemp.textContent = temp;
-    dispHum.textContent = hum;
-    dispAqi.textContent = aqi;
+    if (dispTemp) dispTemp.textContent = card.dataset.temp;
+    if (dispHum) dispHum.textContent = card.dataset.hum;
+    if (dispAqi) dispAqi.textContent = card.dataset.aqi;
+    updateDeltaCaptions({ temp, humidity: hum, aqi });
 
     if (isRec) {
       dispTemp.style.color = 'var(--green-fg)';
       dispHum.style.color = 'var(--blue-fg)';
       dispAqi.style.color = 'var(--green-fg)';
-      insightLine.textContent = "These conditions closely match the conditions recorded during your previous comfortable activity sessions.";
-      suggestionText.textContent = "6:30 PM looks like an ideal window for your 60-minute session. Heat and particulate levels will be in your optimal recovery zone.";
-      window.AIRGUARD.showToast("6:30 PM optimal window selected");
     } else {
       dispTemp.style.color = 'var(--red-fg)';
       dispHum.style.color = 'var(--blue-fg)';
       dispAqi.style.color = 'var(--amber-fg)';
-      insightLine.textContent = "These conditions differ from the conditions recorded during your previous comfortable activity sessions.";
-      suggestionText.textContent = "Consider a cooler time of day. Shifting your run to 6:30 PM reduces thermal stress by 7°C.";
     }
+
+    const durationMinutes = parseDurationMinutes(durationInput.value);
+    const iso = card.dataset.iso;
+    const matched = iso ? lastCandidates.find(c => c.time === iso) : null;
+    const best = bestOfCandidates(durationMinutes);
+
+    if (matched && best) {
+      updatePersonalContext(matched, best, durationMinutes);
+    } else if (!lastCandidates.length) {
+      // Fallback/demo path — no live numbers to reason about, so fall back
+      // to the original static copy rather than fabricating a comparison.
+      if (isRec) {
+        insightLine.textContent = 'These conditions closely match the conditions recorded during your previous comfortable activity sessions.';
+        suggestionText.textContent = `${formatDemoLabel(time)} looks like an ideal window for your ${durationMinutes}-minute session. Heat and particulate levels will be in your optimal recovery zone.`;
+        if (changeBtn) changeBtn.style.display = 'none';
+      } else {
+        insightLine.textContent = 'These conditions differ from the conditions recorded during your previous comfortable activity sessions.';
+        const recCard = timeCardsContainer.querySelector('.time-slot-card.recommended');
+        const recLabel = recCard ? formatDemoLabel(recCard.dataset.time) : 'a cooler window';
+        if (changeBtn) { changeBtn.textContent = `Switch to ${recLabel} window`; changeBtn.style.display = ''; }
+        suggestionText.textContent = `Consider a cooler time of day. Shifting your session to ${recLabel} reduces thermal stress.`;
+      }
+    }
+
+    lastSelected = { temp, humidity: hum, aqi, source: matched ? 'live' : 'demo', label: formatDemoLabel(time) };
+
+    window.AIRGUARD.activityContext = {
+      activity: document.getElementById('actActivity').value,
+      duration_minutes: durationMinutes,
+      selected_time: time,
+      temperature: temp,
+      humidity: hum,
+      aqi: aqi,
+      recommended: isRec,
+      best_window: best ? formatHourLabel(best.time) : null,
+      best_temperature: best?.temp ?? null,
+      baseline_temperature: BASELINE.temp,
+      baseline_humidity: BASELINE.humidity,
+      baseline_aqi: BASELINE.aqi
+      
+    };
+
+    generateActivityAIContext();
+
+    if (!silent) window.AIRGUARD.showToast(isRec ? `${lastSelected.label} optimal window selected` : `${lastSelected.label} selected`);
   }
 
-  timeCards.forEach(card => {
-    card.addEventListener('click', () => updateSlot(card));
-  });
+  function formatDemoLabel(hhmm) {
+    const [h, m] = hhmm.split(':').map(Number);
+    const d = new Date(); d.setHours(h, m, 0, 0);
+    return formatHourLabel(d.toISOString());
+  }
 
-  const changeBtn = document.getElementById('actChangeTimeBtn');
   if (changeBtn) {
     changeBtn.addEventListener('click', () => {
       const recCard = document.querySelector('.time-slot-card.recommended');
@@ -240,10 +629,62 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // ---------------------------------------------------------------------
+  // Initial load: render real windows once the forecast resolves, then
+  // auto-select the recommended one so the page opens already showing the
+  // real best window instead of a hardcoded default.
+  // ---------------------------------------------------------------------
+  const initialCard = timeCardsContainer?.querySelector('.time-slot-card.active') || timeCardsContainer?.querySelector('.time-slot-card');
+  if (initialCard) updateSlot(initialCard, { silent: true });
+  hourlyForecast.then(hours => {
+    if (!hours) return; // keep the static fallback cards exactly as they are
+    const best = renderForecastWindows(hours);
+    if (best) {
+      const bestCard = timeCardsContainer.querySelector('.time-slot-card.recommended');
+      if (bestCard) updateSlot(bestCard, { silent: true });
+    }
+  });
+
+  // ---------------------------------------------------------------------
+  // Step 7: save the real computed context alongside the activity record.
+  // ---------------------------------------------------------------------
   const saveBtn = document.getElementById('actSavePlanBtn');
+  const saveStatus = document.getElementById('activitySaveStatus');
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
-      window.AIRGUARD.showToast("Activity scheduled with environmental alerts enabled");
+    saveBtn.addEventListener('click', async () => {
+      saveBtn.disabled = true;
+      if (saveStatus) { saveStatus.textContent = 'Saving activity to Firebase…'; saveStatus.style.color = 'var(--text-secondary)'; }
+      try {
+        let environment = null;
+        try {
+          environment = await window.AIRGUARD.fetchCurrentConditions(location.lat, location.lng);
+        } catch (environmentError) {
+          console.warn('Environment lookup unavailable; saving activity without environment data', environmentError);
+        }
+        const activeCard = timeCardsContainer.querySelector('.time-slot-card.active');
+        const durationMinutes = parseDurationMinutes(durationInput.value);
+        const best = bestOfCandidates(durationMinutes);
+        const saved = await window.AIRGUARD.saveActivity({
+          activity: document.getElementById('actActivity').value,
+          duration: durationInput.value,
+          plannedTime: document.getElementById('actTime').value,
+          location: document.getElementById('actLocation').value,
+          environment,
+          recommendation: activeCard ? {
+            wasRecommendedWindow: activeCard.dataset.rec === 'true',
+            source: lastCandidates.length ? 'live' : 'demo',
+            bestWindow: best ? formatHourLabel(best.time) : null
+          } : null
+        });
+        if (!saved?.id || String(saved.id).startsWith('local-')) throw new Error('Firebase did not return a saved activity ID.');
+        renderPastActivities(window.AIRGUARD.getUserData?.());
+        if (saveStatus) { saveStatus.textContent = 'Activity saved to Firebase ✓'; saveStatus.style.color = 'var(--green-fg)'; }
+        window.AIRGUARD.showToast('Activity saved to your personal history');
+      } catch (error) {
+        if (saveStatus) { saveStatus.textContent = `Could not save: ${error.message || 'Unknown Firebase error'}`; saveStatus.style.color = 'var(--red-fg)'; }
+        window.AIRGUARD.showToast(error.message || 'Could not save activity');
+      }
+      finally { saveBtn.disabled = false; }
     });
   }
 });

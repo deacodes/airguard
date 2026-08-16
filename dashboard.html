@@ -1,493 +1,725 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AIRGUARD — Wellness Overview Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
-<body>
 
-<div class="app">
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+<body class="dashboard-page">
 
-  <!-- SIDEBAR NAVIGATION -->
-  <aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-      <span class="brand-dot"></span> AIRGUARD
-    </div>
-    <nav class="sidebar-nav">
-      <a href="dashboard.html" class="nav-link active">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.4"/><rect x="14" y="3" width="7" height="7" rx="1.4"/><rect x="3" y="14" width="7" height="7" rx="1.4"/><rect x="14" y="14" width="7" height="7" rx="1.4"/></svg>
-        Overview
-      </a>
-      <a href="checkin.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.4 2.4L16 9.5"/></svg>
-        Check-in
-      </a>
-      <a href="patterns.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 17 6-6 4 4 8-8"/><path d="M15 6h6v6"/></svg>
-        Patterns
-      </a>
-      <a href="timeline.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
-        Timeline
-      </a>
-      <a href="environment.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a13 13 0 0 1 0 18 13 13 0 0 1 0-18Z"/></svg>
-        Environment
-      </a>
-      <a href="activity.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 8-6-16-3 8H2"/></svg>
-        Activity
-      </a>
-      <a href="weekly-insights.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-        Weekly Insights
-      </a>
-      <a href="ai.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
-        AIRGUARD AI
-      </a>
-    </nav>
-    <div class="sidebar-bottom">
-      <a href="settings.html" class="nav-link">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.88.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06A2 2 0 1 1 19.83 7l-.06.06a1.7 1.7 0 0 0-.34 1.88v.01a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg>
-        Settings
-      </a>
-    </div>
-  </aside>
+  <div class="app">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <!-- MAIN VIEWPORT -->
-  <div class="main-content-wrap">
-    <div class="topbar-mobile">
-      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-      </button>
-      <div class="sidebar-brand" style="padding:0; color:var(--text);"><span class="brand-dot"></span> AIRGUARD</div>
-      <a href="onboarding.html" class="btn btn-sm btn-outline">Tour</a>
-    </div>
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <span class="brand-dot"></span> AIRGUARD
+      </div>
+      <nav class="sidebar-nav">
+        <a href="dashboard.html" class="nav-link active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1.4" />
+            <rect x="14" y="3" width="7" height="7" rx="1.4" />
+            <rect x="3" y="14" width="7" height="7" rx="1.4" />
+            <rect x="14" y="14" width="7" height="7" rx="1.4" />
+          </svg>
+          Overview
+        </a>
+        <a href="checkin.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="m8.5 12.5 2.4 2.4L16 9.5" />
+          </svg>
+          Check-in
+        </a>
+        <a href="patterns.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 17 6-6 4 4 8-8" />
+            <path d="M15 6h6v6" />
+          </svg>
+          Patterns
+        </a>
+        <a href="timeline.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M12 7.5V12l3 2" />
+          </svg>
+          Timeline
+        </a>
+        <a href="environment.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18M12 3a13 13 0 0 1 0 18 13 13 0 0 1 0-18Z" />
+          </svg>
+          Environment
+        </a>
+        <a href="activity.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 8-6-16-3 8H2" />
+          </svg>
+          Activity
+        </a>
+        <a href="weekly-insights.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <path d="M16 2v4M8 2v4M3 10h18" />
+          </svg>
+          Weekly Insights
+        </a>
+        <a href="ai.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" />
+          </svg>
+          AirGuard AI
+        </a>
+      </nav>
+      <div class="sidebar-bottom">
+        <a href="settings.html" class="nav-link">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
+            <path
+              d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.88-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1.03-1.56 1.7 1.7 0 0 0-1.88.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.94a1.7 1.7 0 0 0-.34-1.88L4.2 7a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.88.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.88-.34l.06-.06A2 2 0 1 1 19.83 7l-.06.06a1.7 1.7 0 0 0-.34 1.88v.01a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z" />
+          </svg>
+          Settings
+        </a>
+      </div>
+    </aside>
 
-    <main class="main-viewport fade-in">
-      
-      <!-- GREETING & CONTEXT HEADER -->
-      <div class="page-header-row" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
-        <div>
-          <h1 class="page-title">Good morning, Dea</h1>
-          <p class="page-subtitle">Jaipur, India · Today</p>
-          <p class="page-note">It's <span id="currentTime">9:20 AM</span> &ndash; your comfort usually dips around this time. <b>Your comfort has been trending lower this week.</b></p>
-        </div>
-
-        <div style="display:flex; gap:10px;">
-          <a href="checkin.html" class="btn btn-dark btn-sm">Take Check-in →</a>
-          <a href="ai.html" class="btn btn-purple btn-sm">Ask AIRGUARD AI</a>
-        </div>
+    <!-- MAIN VIEWPORT -->
+    <div class="main-content-wrap">
+      <div class="topbar-mobile">
+        <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round">
+            <path d="M3 6h18M3 12h18M3 18h18" />
+          </svg>
+        </button>
+        <div class="sidebar-brand" style="padding:0; color:var(--text);"><span class="brand-dot"></span> AIRGUARD</div>
+        <a href="onboarding.html" class="btn btn-sm btn-outline">Tour</a>
       </div>
 
-      <!-- TODAY'S ENVIRONMENT PILL ROW -->
-      <h2 class="section-heading">Today's Environment</h2>
-        <div class="pill-row" style="margin-bottom: 24px;">
-          <div class="env-pill" data-tip="AQI is 128 (Moderately elevated). 39% higher than your personal baseline (92).">
-          <span class="dot" style="background:var(--amber);"></span>
-          <span class="label">AQI</span>
-          <span class="val" id="currentAQI">128</span>
-          <span class="delta change-up-bad">↗ +12</span>
+      <main class="main-viewport fade-in">
+
+        <!-- GREETING & CONTEXT HEADER -->
+        <div class="page-header-row"
+          style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
+          <div>
+            <h1 class="page-title">Good morning, Dea</h1>
+            <p class="page-subtitle">Jaipur, India · Today</p>
+            <p class="page-note">It's <span id="currentTime">9:20 AM</span> &ndash; your comfort usually dips around
+              this time. <b>Your comfort has been trending lower this week.</b></p>
+          </div>
+
+          <div style="display:flex; gap:10px;">
+            <a href="checkin.html" class="btn btn-dark btn-sm">Take Check-in →</a>
+            <a href="timeline.html" class="btn btn-outline btn-sm">Past Check-ins</a>
+            <a href="timeline.html#timelineActivityHistory" class="btn btn-outline btn-sm">Past Activities</a>
+            <a href="ai.html" class="btn btn-purple btn-sm">Ask AIRGUARD AI</a>
+          </div>
         </div>
-        <div class="env-pill" data-tip="Temperature is 34°C (Hot). Warmer than your typical 28
+
+        <section class="dashboard-guidance-grid" aria-label="Your day at a glance" data-reveal>
+          <article class="card dashboard-guidance-card dashboard-summary-card" id="dashboardDailySummary" data-reveal>
+            <h2 class="dashboard-guidance-title" id="dashboardSummaryTitle">Putting your day into context</h2>
+            <p class="body-text" id="dashboardSummaryText">AIRGUARD is preparing a personal summary from your latest
+              check-ins and the conditions around you.</p>
+            <p class="dashboard-ai-meta" id="dashboardSummaryMeta">Updates when your saved data changes.</p>
+          </article>
+          <article class="card dashboard-guidance-card dashboard-suggestion-card" id="dashboardTodaySuggestion"
+            data-reveal>
+            <h2 class="dashboard-guidance-title" id="dashboardSuggestionTitle">One gentle next step</h2>
+            <p class="body-text" id="dashboardSuggestionText">AIRGUARD is preparing one practical suggestion for today
+              using your environment and personal history.</p>
+            <p class="dashboard-ai-meta" id="dashboardSuggestionMeta">Non-medical guidance based on your saved context.
+            </p>
+          </article>
+        </section>
+
+        <!-- TODAY'S ENVIRONMENT PILL ROW -->
+        <h2 class="section-heading" data-reveal>Today's Environment</h2>
+        <div class="pill-row dashboard-env-grid" style="margin-bottom: 24px;" data-reveal>
+          <div class="env-pill"
+            data-tip="AQI is 128 (Moderately elevated). 39% higher than your personal baseline (92).">
+            <span class="dot" style="background:var(--amber);"></span>
+            <span class="label">AQI</span>
+            <span class="val" id="currentAQI">—</span>
+            <span class="delta change-up-bad">↗ +12</span>
+          </div>
+          <div class="env-pill" data-tip="Temperature is 34°C (Hot). Warmer than your typical 28
         °C baseline.">
             <span class="dot" style="background:var(--red);"></span>
             <span class="label">Temp</span>
-            <span class="val" id="currentTemp">34</span>
+            <span class="val" id="currentTemp">—</span>
             <span class="delta change-up-bad">↗ +2.1</span>
-        </div>
-        <div class="env-pill" data-tip="Humidity is 72% (High). 28% above your personal baseline of 56%.">
-          <span class="dot" style="background:var(--blue);"></span>
-          <span class="label">Humidity</span>
-          <span class="val" id="currentHumidity">72%</span>
-          <span class="delta change-up-bad">↗ +4</span>
-        </div>
-        <div class="env-pill" data-tip="UV Index is High (8). Peak solar radiation between 11 AM - 3 PM.">
-          <span class="dot" style="background:var(--purple);"></span>
-          <span class="label">UV</span>
-          <span class="val" id="currentUV">High</span>
-          <span class="delta change-up-bad">↗ +1</span>
-        </div>
-        <div class="env-pill" data-tip="Pollen is Moderate. Grass and tree pollen present but stable.">
-          <span class="dot" style="background:var(--green);"></span>
-          <span class="label">Pollen</span>
-          <span class="val" id="currentPollen">Moderate</span>
-          <span class="delta change-down-good">↘ -1</span>
-        </div>
-      </div>
-
-      <!-- MAIN 2-COLUMN DASHBOARD GRID -->
-      <div class="dash-2col">
-
-        <!-- LEFT COLUMN: PERSONAL PATTERN DETECTED (PRIMARY FOCUS) -->
-        <div class="card insight-card">
-          <div class="insight-top">
-            <span class="insight-icon-badge">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
-            </span>
-            <h3 class="card-heading">Personal Pattern Detected</h3>
           </div>
-          <p class="body-text">Today's conditions resemble 5 previous days where you reported lower comfort.</p>
-          <p class="avg-highlight-line">On those 5 days, your average comfort was <b>4.2 / 10</b> (vs your avg 6.2).</p>
+          <div class="env-pill" data-tip="Humidity is 72% (High). 28% above your personal baseline of 56%.">
+            <span class="dot" style="background:var(--blue);"></span>
+            <span class="label">Humidity</span>
+            <span class="val" id="currentHumidity">—</span>
+            <span class="delta change-up-bad">↗ +4</span>
+          </div>
+          <div class="env-pill" data-tip="UV Index is High (8). Peak solar radiation between 11 AM - 3 PM.">
+            <span class="dot" style="background:var(--purple);"></span>
+            <span class="label">UV</span>
+            <span class="val" id="currentUV">—</span>
+            <span class="delta change-up-bad">↗ +1</span>
+          </div>
+          <div class="env-pill" data-tip="Pollen is Moderate. Grass and tree pollen present but stable.">
+            <span class="dot" style="background:var(--green);"></span>
+            <span class="label">Pollen</span>
+            <span class="val" id="currentPollen">—</span>
+            <span class="delta change-down-good">↘ -1</span>
+          </div>
+        </div>
 
-          <div class="cmp-bar-container">
+        <!-- MAIN 2-COLUMN DASHBOARD GRID -->
+        <div class="dash-2col" data-reveal>
+
+          <!-- LEFT COLUMN: PERSONAL PATTERN DETECTED (PRIMARY FOCUS) -->
+          <div class="card insight-card" id="dashboardPersonalInsight">
+            <div class="insight-top">
+              <span class="insight-icon-badge">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path
+                    d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" />
+                </svg>
+              </span>
+              <h3 class="card-heading">A pattern worth watching</h3>
+            </div>
+            <p class="body-text">AIRGUARD will show a repeat here once your saved check-ins include enough matching
+              environment data.</p>
+            <p class="avg-highlight-line" id="patternEvidenceText">Looking for a related signal in your history.</p>
+            <p class="secondary-text pattern-plain-language">This is a repeat in your own history—not a medical
+              diagnosis.</p>
+
+            <div class="cmp-bar-container" id="patternEvidenceBars"
+              aria-label="Today compared with your usual conditions">
               <div class="cmp-row">
                 <div class="cmp-row-top">
                   <span class="label">Temperature</span>
                   <span class="vals">
-                    <span
-                      class="hi"
-                      id="comparisonTemp"
-                      style="color:var(--red-fg);"
-                    >34°C</span>
+                    <span class="hi" id="comparisonTemp" style="color:var(--red-fg);">—</span>
                     /
-                    <span id="comparisonTempBaseline">28°C</span>
+                    <span id="comparisonTempBaseline">—</span>
                   </span>
                 </div>
-              <div class="cmp-track">
-                <div class="cmp-fill" style="width: 78%; background: var(--red);"></div>
+                <div class="cmp-track">
+                  <div class="cmp-fill" id="comparisonTempFill" style="width: 0; background: var(--red);"></div>
+                </div>
+              </div>
+              <div class="cmp-row">
+                <div class="cmp-row-top">
+                  <span class="label">Humidity</span>
+                  <span class="vals"><span class="hi" id="comparisonHumidity" style="color:var(--blue-fg);">—</span> /
+                    <span id="comparisonHumidityBaseline">—</span></span>
+                </div>
+                <div class="cmp-track">
+                  <div class="cmp-fill" id="comparisonHumidityFill" style="width: 0; background: var(--blue);"></div>
+                </div>
+              </div>
+              <div class="cmp-row" style="margin-bottom:0;">
+                <div class="cmp-row-top">
+                  <span class="label">AQI</span>
+                  <span class="vals"><span class="hi" id="comparisonAQI" style="color:var(--amber-fg);">—</span> / <span
+                      id="comparisonAQIBaseline">—</span></span>
+                </div>
+                <div class="cmp-track">
+                  <div class="cmp-fill" id="comparisonAQIFill" style="width: 0; background: var(--amber);"></div>
+                </div>
               </div>
             </div>
-            <div class="cmp-row">
-              <div class="cmp-row-top">
-                <span class="label">Humidity</span>
-                <span class="vals"><span class="hi" id="comparisonHumidity" style="color:var(--blue-fg);">72%</span> / 45%</span>
-              </div>
-              <div class="cmp-track">
-                <div class="cmp-fill" style="width: 82%; background: var(--blue);"></div>
-              </div>
-            </div>
-            <div class="cmp-row" style="margin-bottom:0;">
-              <div class="cmp-row-top">
-                <span class="label">AQI</span>
-                <span class="vals"><span class="hi" id="comparisonAQI" style="color:var(--amber-fg);">128</span> / 92</span>
-              </div>
-              <div class="cmp-track">
-                <div class="cmp-fill" style="width: 70%; background: var(--amber);"></div>
-              </div>
-            </div>
+
+            <button class="link-arrow-btn" data-open-modal="evidenceModal">Why was this flagged? →</button>
           </div>
 
-          <div class="mini-chart-wrap">
-            <div class="mc-title">
-              <span class="t">Comfort comparison</span>
-              <span class="s">Today vs baseline days</span>
-            </div>
-            <canvas id="comfortComparisonChart" height="90"></canvas>
-            <div class="mini-legend">
-              <span><span class="sw" style="background:var(--blue);"></span>Baseline days</span>
-              <span><span class="sw" style="background:var(--red);"></span>Today</span>
-            </div>
-          </div>
+          <!-- RIGHT COLUMN: TODAY'S SUGGESTION + QUICK CHECK-IN -->
+          <div style="display:flex; flex-direction:column; gap:16px;">
 
-          <button class="link-arrow-btn" data-open-modal="evidenceModal">Why was this flagged? →</button>
-        </div>
-
-        <!-- RIGHT COLUMN: TODAY'S SUGGESTION + QUICK CHECK-IN -->
-        <div style="display:flex; flex-direction:column; gap:16px;">
-          
-          <!-- TODAY'S SUGGESTION CARD -->
-          <div class="card">
-            <h2 class="section-heading" style="margin-bottom:8px;">Today's Suggestion</h2>
-            <p class="body-text" style="font-weight:700;">Consider moving prolonged outdoor activity to a cooler part of the day.</p>
-            <div class="suggestion-meta">
-              <span class="meta-chip">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
-                Based on 8 similar days
-              </span>
-              <span class="confidence-badge">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12.5 11.2 15 15.5 9.5"/><circle cx="12" cy="12" r="9"/></svg>
-                84% confidence
-              </span>
-            </div>
-            <button class="evidence-link" data-open-modal="evidenceModal">See evidence →</button>
-          </div>
-
-          <!-- QUICK CHECK-IN CARD -->
-          <div class="card">
-            <h2 class="section-heading" style="margin-bottom:6px;">Quick Check-in</h2>
-            <p class="secondary-text" style="font-weight:600; margin-bottom:14px;">How are you feeling right now?</p>
-            
-            <div class="slider-group">
-              <div class="slider-label-row">
-                <span>Energy</span>
-                <span class="rt">
-                  <span id="dashEnergyVal">5</span> / 10
-                  <span class="delta-tag change-down-bad" id="dashEnergyDelta">↘ -1.2</span>
+            <!-- TODAY'S SUGGESTION CARD -->
+            <div class="card" id="legacyDashboardSuggestion">
+              <h2 class="section-heading" style="margin-bottom:8px;">Today's Suggestion</h2>
+              <p class="body-text" style="font-weight:700;">Consider moving prolonged outdoor activity to a cooler part
+                of the day.</p>
+              <div class="suggestion-meta">
+                <span class="meta-chip">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 20V10M12 20V4M20 20v-7" />
+                  </svg>
+                  Based on 8 similar days
+                </span>
+                <span class="confidence-badge">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 12.5 11.2 15 15.5 9.5" />
+                    <circle cx="12" cy="12" r="9" />
+                  </svg>
+                  84% confidence
                 </span>
               </div>
-              <input type="range" min="1" max="10" value="5" id="dashEnergySlider" data-val-target="dashEnergyVal" data-delta-target="dashEnergyDelta" data-avg="6.4">
+              <button class="evidence-link" data-open-modal="evidenceModal">See evidence →</button>
             </div>
 
-            <div class="slider-group" style="margin-bottom:10px;">
-              <div class="slider-label-row">
-                <span>Comfort</span>
-                <span class="rt">
-                  <span id="dashComfortVal">6</span> / 10
-                  <span class="delta-tag change-down-bad" id="dashComfortDelta">↘ -0.8</span>
-                </span>
+            <!-- QUICK CHECK-IN CARD -->
+            <div class="card" id="dashboardQuickCheckin">
+              <h2 class="section-heading" style="margin-bottom:6px;">Quick Check-in</h2>
+              <p class="secondary-text" style="font-weight:600; margin-bottom:14px;">How are you feeling right now?</p>
+
+              <div class="slider-group">
+                <div class="slider-label-row">
+                  <span>Energy</span>
+                  <span class="rt">
+                    <span id="dashEnergyVal">5</span> / 10
+                    <span class="delta-tag change-down-bad" id="dashEnergyDelta">↘ -1.2</span>
+                  </span>
+                </div>
+                <input type="range" min="1" max="10" value="5" id="dashEnergySlider" data-val-target="dashEnergyVal"
+                  data-delta-target="dashEnergyDelta" data-avg="6.4">
               </div>
-              <input type="range" min="1" max="10" value="6" id="dashComfortSlider" data-val-target="dashComfortVal" data-delta-target="dashComfortDelta" data-avg="6.6">
+
+              <div class="slider-group" style="margin-bottom:10px;">
+                <div class="slider-label-row">
+                  <span>Comfort</span>
+                  <span class="rt">
+                    <span id="dashComfortVal">6</span> / 10
+                    <span class="delta-tag change-down-bad" id="dashComfortDelta">↘ -0.8</span>
+                  </span>
+                </div>
+                <input type="range" min="1" max="10" value="6" id="dashComfortSlider" data-val-target="dashComfortVal"
+                  data-delta-target="dashComfortDelta" data-avg="6.6">
+              </div>
+
+              <div class="chip-row" id="dashSymptomChips">
+                <button type="button" class="chip selected" data-val="Headache">Headache</button>
+                <button type="button" class="chip" data-val="Fatigue">Fatigue</button>
+                <button type="button" class="chip" data-val="Eye irritation">Eye irritation</button>
+                <button type="button" class="chip" data-val="Congestion">Congestion</button>
+                <button type="button" class="chip" data-val="None">None</button>
+              </div>
+
+              <button class="btn btn-dark btn-full" style="margin-top:16px;" id="dashSaveCheckinBtn">Save
+                check-in</button>
+              <div class="checkin-confirm" id="dashCheckinConfirm">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                Check-in saved to personal pattern history
+              </div>
             </div>
 
-            <div class="chip-row" id="dashSymptomChips">
-              <button type="button" class="chip selected" data-val="Headache">Headache</button>
-              <button type="button" class="chip" data-val="Fatigue">Fatigue</button>
-              <button type="button" class="chip" data-val="Eye irritation">Eye irritation</button>
-              <button type="button" class="chip" data-val="Congestion">Congestion</button>
-              <button type="button" class="chip" data-val="None">None</button>
+          </div>
+        </div>
+
+        <div class="card" id="dashboardActivityPanel" style="margin-top:24px; padding:20px;" data-reveal>
+          <div
+            style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:14px;">
+            <div>
+              <h2 class="section-heading" style="margin:0 0 5px;">Activities</h2>
+              <p class="secondary-text" style="margin:0;">Your latest saved activities and planned windows.</p>
             </div>
+            <a class="btn btn-outline btn-sm" href="activity.html">Plan activity</a>
+          </div>
+          <div id="dashboardActivityList" style="display:grid;gap:8px;">No activities recorded yet.</div>
+        </div>
 
-            <button class="btn btn-dark btn-full" style="margin-top:16px;" id="dashSaveCheckinBtn">Save check-in</button>
-            <div class="checkin-confirm" id="dashCheckinConfirm">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-              Check-in saved to personal pattern history
+        <div class="divider-space"></div>
+
+        <!-- YOUR WELLNESS 4 STAT CARDS -->
+        <h2 class="section-heading">Your Wellness</h2>
+        <div class="grid grid-4" id="dashboardWellnessGrid" data-reveal>
+
+          <div class="card stat-card">
+            <div class="stat-top">
+              <span class="stat-label">ENERGY</span>
+              <span class="stat-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path
+                    d="M12 20s-7-4.4-9.5-9C.8 7.5 3 4 6.5 4c2 0 3.5 1.2 4.5 2.6C12 5.2 13.5 4 15.5 4 19 4 21.2 7.5 19.5 11 17 15.6 12 20 12 20Z" />
+                </svg>
+              </span>
+            </div>
+            <div class="stat-value-row">
+              <span class="stat-value">5.8 / 10</span>
+              <span class="stat-delta change-down-bad">↘ -0.6</span>
+            </div>
+            <div class="stat-bar-track">
+              <div class="stat-bar-fill" style="width:58%; background:var(--purple);"></div>
+            </div>
+            <div class="stat-caption">vs your avg 6.4</div>
+          </div>
+
+          <div class="card stat-card">
+            <div class="stat-top">
+              <span class="stat-label">COMFORT</span>
+              <span class="stat-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" />
+                </svg>
+              </span>
+            </div>
+            <div class="stat-value-row">
+              <span class="stat-value">6.2 / 10</span>
+              <span class="stat-delta change-down-bad">↘ -0.4</span>
+            </div>
+            <div class="stat-bar-track">
+              <div class="stat-bar-fill" style="width:62%; background:var(--purple);"></div>
+            </div>
+            <div class="stat-caption">vs your avg 6.6</div>
+          </div>
+
+          <div class="card stat-card">
+            <div class="stat-top">
+              <span class="stat-label">SLEEP</span>
+              <span class="stat-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z" />
+                </svg>
+              </span>
+            </div>
+            <div class="stat-value-row">
+              <span class="stat-value">6h 14m</span>
+            </div>
+            <div class="stat-bar-track">
+              <div class="stat-bar-fill" style="width:72%; background:var(--blue);"></div>
+            </div>
+            <div class="stat-caption">vs your avg 7h 02m</div>
+          </div>
+
+          <div class="card stat-card">
+            <div class="stat-top">
+              <span class="stat-label">MOVEMENT</span>
+              <span class="stat-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 12h-4l-3 8-6-16-3 8H2" />
+                </svg>
+              </span>
+            </div>
+            <div class="stat-value-row">
+              <span class="stat-value">42 min</span>
+            </div>
+            <div class="stat-bar-track">
+              <div class="stat-bar-fill" style="width:64%; background:var(--green);"></div>
+            </div>
+            <div class="stat-caption">vs your avg 51 min</div>
+          </div>
+
+        </div>
+
+        <div class="divider-space"></div>
+
+        <!-- 7-DAY ENVIRONMENT × WELLNESS CHART -->
+        <div class="card">
+          <div class="chart-card-top">
+            <h3>7-Day Environment × Wellness</h3>
+            <div class="chart-legend-row">
+              <span><span class="sw" style="background:var(--blue);"></span>AQI (Environment)</span>
+              <span><span class="sw" style="background:var(--green);"></span>Comfort (Wellness)</span>
             </div>
           </div>
-
-        </div>
-      </div>
-
-      <div class="divider-space"></div>
-
-      <!-- YOUR WELLNESS 4 STAT CARDS -->
-      <h2 class="section-heading">Your Wellness</h2>
-      <div class="grid grid-4">
-        
-        <div class="card stat-card">
-          <div class="stat-top">
-            <span class="stat-label">ENERGY</span>
-            <span class="stat-icon">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-9.5-9C.8 7.5 3 4 6.5 4c2 0 3.5 1.2 4.5 2.6C12 5.2 13.5 4 15.5 4 19 4 21.2 7.5 19.5 11 17 15.6 12 20 12 20Z"/></svg>
-            </span>
-          </div>
-          <div class="stat-value-row">
-            <span class="stat-value">5.8 / 10</span>
-            <span class="stat-delta change-down-bad">↘ -0.6</span>
-          </div>
-          <div class="stat-bar-track">
-            <div class="stat-bar-fill" style="width:58%; background:var(--purple);"></div>
-          </div>
-          <div class="stat-caption">vs your avg 6.4</div>
+          <canvas id="recentPatternChart" height="84"></canvas>
         </div>
 
-        <div class="card stat-card">
-          <div class="stat-top">
-            <span class="stat-label">COMFORT</span>
-            <span class="stat-icon">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
-            </span>
-          </div>
-          <div class="stat-value-row">
-            <span class="stat-value">6.2 / 10</span>
-            <span class="stat-delta change-down-bad">↘ -0.4</span>
-          </div>
-          <div class="stat-bar-track">
-            <div class="stat-bar-fill" style="width:62%; background:var(--purple);"></div>
-          </div>
-          <div class="stat-caption">vs your avg 6.6</div>
-        </div>
 
-        <div class="card stat-card">
-          <div class="stat-top">
-            <span class="stat-label">SLEEP</span>
-            <span class="stat-icon">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"/></svg>
-            </span>
-          </div>
-          <div class="stat-value-row">
-            <span class="stat-value">6h 14m</span>
-          </div>
-          <div class="stat-bar-track">
-            <div class="stat-bar-fill" style="width:72%; background:var(--blue);"></div>
-          </div>
-          <div class="stat-caption">vs your avg 7h 02m</div>
-        </div>
-
-        <div class="card stat-card">
-          <div class="stat-top">
-            <span class="stat-label">MOVEMENT</span>
-            <span class="stat-icon">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 8-6-16-3 8H2"/></svg>
-            </span>
-          </div>
-          <div class="stat-value-row">
-            <span class="stat-value">42 min</span>
-          </div>
-          <div class="stat-bar-track">
-            <div class="stat-bar-fill" style="width:64%; background:var(--green);"></div>
-          </div>
-          <div class="stat-caption">vs your avg 51 min</div>
-        </div>
-
-      </div>
-
-      <div class="divider-space"></div>
-
-      <!-- 7-DAY ENVIRONMENT × WELLNESS CHART -->
-      <div class="card">
-        <div class="chart-card-top">
-          <h3>7-Day Environment × Wellness</h3>
-          <div class="chart-legend-row">
-            <span><span class="sw" style="background:var(--blue);"></span>AQI (Environment)</span>
-            <span><span class="sw" style="background:var(--green);"></span>Comfort (Wellness)</span>
-          </div>
-        </div>
-        <canvas id="recentPatternChart" height="84"></canvas>
-      </div>
-
-
-    </main>
-  </div>
-</div>
-
-<!-- WHY WAS THIS FLAGGED EVIDENCE MODAL -->
-<div class="modal-overlay" id="evidenceModal">
-  <div class="modal-box">
-    <div class="modal-top">
-      <h3 class="card-heading">Why was this flagged?</h3>
-      <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      </main>
     </div>
-    <p class="body-text" id="environmentExplanation">
+  </div>
+
+  <!-- WHY WAS THIS FLAGGED EVIDENCE MODAL -->
+  <div class="modal-overlay" id="evidenceModal">
+    <div class="modal-box">
+      <div class="modal-top">
+        <h3 class="card-heading">Why was this flagged?</h3>
+        <button class="modal-close-btn" data-close-modal aria-label="Close">✕</button>
+      </div>
+      <p class="body-text" id="environmentExplanation">
         Today's humidity (72%) and AQI (128) are significantly above your
         personal baseline. AIRGUARD cross-referenced your 30-day records
         and identified 5 previous matching days where you reported a sharp
         dip in physical comfort.
-    </p>
-    
-    <div class="modal-datarow">
+      </p>
+
+      <div class="modal-datarow">
         <span class="k">Today's conditions</span>
         <span class="v" id="todayConditions">
-            34°C · 72% humidity · AQI 128
+          34°C · 72% humidity · AQI 128
         </span>
-    </div>
+      </div>
 
-    <div class="modal-datarow">
+      <div class="modal-datarow">
         <span class="k">Historical baseline</span>
         <span class="v" id="historicalBaseline">
-            28°C · 56% humidity · AQI 92
+          28°C · 56% humidity · AQI 92
         </span>
-    </div>
-    <div class="modal-datarow"><span class="k">Matching days</span><span class="v">5 days (Aug 12, Aug 08, Aug 03, Jul 26, Jul 22)</span></div>
-    <div class="modal-datarow"><span class="k">Average comfort on match days</span><span class="v" style="color:var(--red-fg);">4.2 / 10</span></div>
-    <div class="modal-datarow"><span class="k">Pattern strength</span><span class="v" style="color:var(--purple-fg);">Moderate (84% confidence)</span></div>
+      </div>
+      <div class="modal-datarow"><span class="k">Matching days</span><span class="v">5 days (Aug 12, Aug 08, Aug 03, Jul
+          26, Jul 22)</span></div>
+      <div class="modal-datarow"><span class="k">Average comfort on match days</span><span class="v"
+          style="color:var(--red-fg);">4.2 / 10</span></div>
+      <div class="modal-datarow"><span class="k">Pattern strength</span><span class="v"
+          style="color:var(--purple-fg);">Moderate (84% confidence)</span></div>
 
-    <div class="disclaimer-box">
-      This is an observed statistical pattern in your personal records. It offers decision support for your day and does not constitute medical diagnosis or advice.
-    </div>
-    <div style="margin-top:18px; display:flex; gap:10px;">
-      <a href="pattern-detail.html" class="btn btn-dark btn-sm">Inspect Full Pattern →</a>
-      <button class="btn btn-outline btn-sm" data-close-modal>Close</button>
+      <div class="disclaimer-box">
+        This is an observed statistical pattern in your personal records. It offers decision support for your day and
+        does not constitute medical diagnosis or advice.
+      </div>
+      <div style="margin-top:18px; display:flex; gap:10px;">
+        <a href="pattern-detail.html" class="btn btn-dark btn-sm">Inspect Full Pattern →</a>
+        <button class="btn btn-outline btn-sm" data-close-modal>Close</button>
+      </div>
     </div>
   </div>
-</div>
 
-<script src="js/main.js"></script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  // Chart.js default setup
-  Chart.defaults.font.family = "'DM Sans', sans-serif";
-  Chart.defaults.color = "#8A939A";
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+  <script src="js/firebase.js"></script>
+  <script src="js/main.js"></script>
+  <script>
+    (function () {
+      function applyBarWidths() {
+        document.querySelectorAll('.cmp-row').forEach(row => {
+          const valsEl = row.querySelector('.cmp-row-top .vals');
+          const fillEl = row.querySelector('.cmp-fill');
+          if (!valsEl || !fillEl) return;
 
-  // Comfort comparison mini chart on Overview insight card
-  const baselineComfortSeries = [6.4, 6.1, 6.7, 6.0, 6.5, 6.2, 6.6, 6.3];
-  const todayComfortSeries    = [5.2, 6.0, 5.4, 6.1, 5.0, 5.6, 4.6, 5.1];
-  const compCtx = document.getElementById("comfortComparisonChart");
-  if (compCtx) {
-    new Chart(compCtx, {
-      type: "line",
-      data: {
-        labels: baselineComfortSeries.map((_, i) => i + 1),
-        datasets: [
-          { data: baselineComfortSeries, borderColor: "#2F6FEB", borderWidth: 2, pointRadius: 2.5, tension: 0.35 },
-          { data: todayComfortSeries, borderColor: "#E5484D", borderWidth: 2, pointRadius: 2.5, tension: 0.35 }
-        ]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false }, tooltip: { enabled: false } },
-        scales: { x: { display: false }, y: { display: false, min: 3, max: 8 } }
-      }
-    });
-  }
+          // valsEl text looks like "29°C / 28°C" or "30% / 56%" or "30 / 92"
+          const numbers = valsEl.textContent
+            .split('/')
+            .map(part => parseFloat(part.replace(/[^\d.-]/g, '')));
 
-  // 7-Day Environment × Wellness dual-axis Chart
-  const days = window.AIRGUARD ? window.AIRGUARD.daysData : [];
-  const last7 = days.slice(-7);
-  const chartCtx = document.getElementById("recentPatternChart");
-  if (chartCtx && last7.length) {
-    new Chart(chartCtx, {
-      type: "line",
-      data: {
-        labels: last7.map(d => d.dayLabel),
-        datasets: [
-          {
-            label: "AQI",
-            data: last7.map(d => d.aqi),
-            borderColor: "#2F6FEB",
-            backgroundColor: "rgba(47,111,235,0.06)",
-            borderWidth: 2.5,
-            tension: 0.35,
-            pointRadius: 4,
-            pointBackgroundColor: "#2F6FEB",
-            yAxisID: "y"
-          },
-          {
-            label: "Comfort",
-            data: last7.map(d => d.comfort),
-            borderColor: "#17A673",
-            backgroundColor: "rgba(23,166,115,0.08)",
-            borderWidth: 2.5,
-            tension: 0.35,
-            pointRadius: 4,
-            pointBackgroundColor: "#17A673",
-            fill: true,
-            yAxisID: "y1"
+          const [current, baseline] = numbers;
+          if (!Number.isFinite(current) || !Number.isFinite(baseline) || baseline <= 0) {
+            fillEl.style.width = '0%';
+            return;
           }
-        ]
-      },
-      options: {
-        responsive: true,
-        interaction: { mode: "index", intersect: false },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              afterBody: function(items) {
-                const d = last7[items[0].dataIndex];
-                return [`Temperature: ${d.temp}°C`, `Humidity: ${d.humidity}%`];
+
+          const pct = Math.min(100, Math.max(3, (current / baseline) * 100));
+          fillEl.style.width = pct + '%';
+        });
+      }
+
+      // Run once now, and keep re-running as the numbers get filled in async.
+      applyBarWidths();
+      const target = document.getElementById('patternEvidenceBars');
+      if (target) {
+        new MutationObserver(applyBarWidths).observe(target, { childList: true, subtree: true, characterData: true });
+      }
+    })();
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Chart.js default setup
+      Chart.defaults.font.family = "'DM Sans', sans-serif";
+      const darkMode = document.body.classList.contains('dark-theme');
+      const chartGridColor = darkMode ? '#30363d' : '#EEF2F2';
+      Chart.defaults.color = darkMode ? '#8B949E' : '#8A939A';
+
+      // Comfort comparison mini chart on Overview insight card
+      const compCtx = document.getElementById("comfortComparisonChart");
+      let comfortChart = null;
+      function renderComparisonChart(data) {
+        const records = (data?.checkins || window.AIRGUARD?.daysData || []).slice().sort((a, b) => new Date(a.createdAt || a.timestamp || a.date) - new Date(b.createdAt || b.timestamp || b.date));
+        const metricRecords = metric => records.map(item => item[metric] ?? item).filter(item => item?.[metric] != null || Number.isFinite(Number(item)));
+        const existingEmpty = compCtx?.parentElement?.querySelector('.comparison-empty');
+        if (existingEmpty) existingEmpty.remove();
+        if (!compCtx) return;
+        if (comfortChart) { comfortChart.destroy(); comfortChart = null; }
+        const valid = records.filter(item => item.comfort != null || item.energy != null);
+        if (!valid.length) {
+          compCtx.style.display = 'none';
+          const empty = document.createElement('p'); empty.className = 'comparison-empty secondary-text'; empty.textContent = 'Add a check-in to compare your baseline with today.'; compCtx.parentElement.appendChild(empty);
+          return;
+        }
+        compCtx.style.display = '';
+        const comfortRecords = valid.filter(day => day.comfort != null);
+        const comfortAverage = comfortRecords.length ? comfortRecords.reduce((sum, day) => sum + Number(day.comfort), 0) / comfortRecords.length : null;
+        const latestComfort = comfortRecords.length ? Number(comfortRecords[comfortRecords.length - 1].comfort) : null;
+        comfortChart = new Chart(compCtx, {
+          type: "line",
+          data: {
+            labels: ['Baseline average', 'Today'],
+            datasets: [
+              { label: 'Baseline days', data: comfortAverage == null ? [null, null] : [comfortAverage, comfortAverage], borderColor: "#2F6FEB", backgroundColor: "rgba(47,111,235,.12)", borderWidth: 2.5, pointRadius: 4, pointHoverRadius: 7, tension: 0.35 },
+              { label: 'Today', data: latestComfort == null ? [null, null] : [null, latestComfort], borderColor: "#E5484D", backgroundColor: "rgba(229,72,77,.14)", borderWidth: 2.5, pointRadius: 5, pointHoverRadius: 8, tension: 0.35 }
+            ]
+          },
+          options: {
+            responsive: true,
+            interaction: { mode: 'nearest', intersect: false },
+            onClick: (event, elements) => {
+              if (!elements.length) return;
+              const point = elements[0];
+              const value = comfortChart.data.datasets[point.datasetIndex].data[point.index];
+              if (value != null) window.AIRGUARD?.showToast(`${comfortChart.data.datasets[point.datasetIndex].label}: ${Number(value).toFixed(1)} / 10`);
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                enabled: true,
+                callbacks: {
+                  label: context => `${context.dataset.label}: ${Number(context.parsed.y).toFixed(1)} / 10`
+                }
               }
+            },
+            scales: {
+              x: { display: true, grid: { display: false }, ticks: { font: { size: 10 } } },
+              y: { display: true, min: 0, max: 10, ticks: { stepSize: 2, font: { size: 10 } }, grid: { color: chartGridColor }, title: { display: true, text: 'Score', font: { size: 10 } } }
             }
           }
-        },
-        scales: {
-          x: { grid: { display: false } },
-          y: { position: "left", min: 50, max: 170, title: { display: true, text: "AQI", font: { size: 11 } }, grid: { color: "#F0F5F4" } },
-          y1: { position: "right", min: 0, max: 10, title: { display: true, text: "Comfort", font: { size: 11 } }, grid: { display: false } }
-        }
+        });
+      }
+      renderComparisonChart({ checkins: window.AIRGUARD?.daysData || [] });
+      window.addEventListener('airguard-data-ready', event => renderComparisonChart(event.detail));
+      function updateComfortMetric(metric) {
+        if (!comfortChart) return;
+        const records = (window.AIRGUARD?.daysData || []).filter(day => day[metric] != null);
+        if (!records.length) return;
+        const average = records.reduce((sum, day) => sum + Number(day[metric]), 0) / records.length;
+        const latest = Number(records[records.length - 1][metric]);
+        comfortChart.data.datasets[0].data = [average, average];
+        comfortChart.data.datasets[1].data = [null, latest];
+        comfortChart.options.scales.y.min = 0;
+        comfortChart.options.scales.y.max = 10;
+        comfortChart.data.datasets[0].label = `${metric[0].toUpperCase() + metric.slice(1)} baseline`;
+        comfortChart.options.plugins.tooltip.callbacks.label = context => `${context.dataset.label}: ${Number(context.parsed.y).toFixed(1)} / 10`;
+        comfortChart.update();
+        document.querySelector('.mc-title .t').textContent = `${metric[0].toUpperCase() + metric.slice(1)} comparison`;
+      }
+      document.getElementById('comfortMetricBtn')?.addEventListener('click', () => {
+        document.getElementById('comfortMetricBtn').classList.add('active');
+        document.getElementById('energyMetricBtn').classList.remove('active');
+        updateComfortMetric('comfort');
+      });
+      document.getElementById('energyMetricBtn')?.addEventListener('click', () => {
+        document.getElementById('energyMetricBtn').classList.add('active');
+        document.getElementById('comfortMetricBtn').classList.remove('active');
+        updateComfortMetric('energy');
+      });
+
+      // 7-Day Environment × Wellness dual-axis Chart
+      const days = window.AIRGUARD ? window.AIRGUARD.daysData : [];
+      const last7 = days.slice(-7);
+      const chartCtx = document.getElementById("recentPatternChart");
+      if (chartCtx && last7.length) {
+        new Chart(chartCtx, {
+          type: "line",
+          data: {
+            labels: last7.map(d => d.dayLabel),
+            datasets: [
+              {
+                label: "AQI",
+                data: last7.map(d => d.aqi),
+                borderColor: "#2F6FEB",
+                backgroundColor: "rgba(47,111,235,0.06)",
+                borderWidth: 2.5,
+                tension: 0.35,
+                pointRadius: 4,
+                pointBackgroundColor: "#2F6FEB",
+                yAxisID: "y"
+              },
+              {
+                label: "Comfort",
+                data: last7.map(d => d.comfort),
+                borderColor: "#17A673",
+                backgroundColor: "rgba(23,166,115,0.08)",
+                borderWidth: 2.5,
+                tension: 0.35,
+                pointRadius: 4,
+                pointBackgroundColor: "#17A673",
+                fill: true,
+                yAxisID: "y1"
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            interaction: { mode: "index", intersect: false },
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  afterBody: function (items) {
+                    const d = last7[items[0].dataIndex];
+                    return [`Temperature: ${d.temp}°C`, `Humidity: ${d.humidity}%`];
+                  }
+                }
+              }
+            },
+            scales: {
+              x: { grid: { display: false } },
+              y: { position: "left", min: 50, max: 170, title: { display: true, text: "AQI", font: { size: 11 } }, grid: { color: chartGridColor } },
+              y1: { position: "right", min: 0, max: 10, title: { display: true, text: "Comfort", font: { size: 11 } }, grid: { display: false } }
+            }
+          }
+        });
+      }
+
+      // Quick Check-in Save
+      const saveBtn = document.getElementById('dashSaveCheckinBtn');
+      const confirmEl = document.getElementById('dashCheckinConfirm');
+      if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+          saveBtn.disabled = true;
+          try {
+            const energySlider = document.getElementById('dashEnergySlider');
+            const comfortSlider = document.getElementById('dashComfortSlider');
+            const selectedSymptoms = Array.from(
+              document.querySelectorAll('#dashSymptomChips .chip.selected')
+            ).map(chip => chip.dataset.val);
+
+            const record = {
+              energy: parseFloat(energySlider.value),
+              comfort: parseFloat(comfortSlider.value),
+              sleep: null,
+              symptoms: selectedSymptoms,
+              activity: 'Indoors',
+              notes: '',
+              timestamp: new Date().toISOString(),
+              environment: null
+            };
+
+            const saved = await window.AIRGUARD.saveCheckin(record);
+            if (!saved?.id || String(saved.id).startsWith('local-')) throw new Error('Firebase did not confirm the save.');
+            if (confirmEl) confirmEl.style.display = 'flex';
+            window.AIRGUARD.showToast('Check-in saved to personal pattern history');
+            setTimeout(() => { if (confirmEl) confirmEl.style.display = 'none'; }, 3000);
+          } catch (error) {
+            window.AIRGUARD.showToast(error.message || 'Could not save check-in');
+          } finally {
+            saveBtn.disabled = false;
+          }
+        });
       }
     });
-  }
-
-  // Quick Check-in Save
-  const saveBtn = document.getElementById('dashSaveCheckinBtn');
-  const confirmEl = document.getElementById('dashCheckinConfirm');
-  if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
-      if (confirmEl) confirmEl.style.display = 'flex';
-      window.AIRGUARD.showToast('Check-in saved to personal pattern history');
-      setTimeout(() => { if (confirmEl) confirmEl.style.display = 'none'; }, 3000);
-    });
-  }
-});
-</script>
+  </script>
 </body>
+
 </html>

@@ -148,7 +148,7 @@
     }
   </style>
 </head>
-<body>
+<body class="timeline-page">
 
 <div class="app">
   <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -189,7 +189,7 @@
       </a>
       <a href="ai.html" class="nav-link">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/></svg>
-        AIRGUARD AI
+        AirGuard AI
       </a>
     </nav>
     <div class="sidebar-bottom">
@@ -212,10 +212,10 @@
     <main class="main-viewport fade-in">
 
       <!-- HEADER ROW -->
-      <div style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+      <div class="calm-page-header" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px; margin-bottom:24px;" data-reveal>
         <div>
           <h1 class="page-title">Your Timeline</h1>
-          <p class="page-subtitle">See how your environment and wellbeing have moved together over time. Click any point on the chart to inspect that day.</p>
+          <p class="page-subtitle">Look back at how you felt, what was around you, and the small things you did—one day at a time.</p>
         </div>
         <div class="timeline-controls" style="margin-bottom:0;">
           <button class="toggle-btn" data-range="7">7 days</button>
@@ -225,22 +225,22 @@
       </div>
 
       <!-- WHAT AM I LOOKING AT? callout -->
-      <div style="background:var(--blue-bg); border:1px solid #BED7FA; border-radius:var(--radius-md); padding:14px 18px; margin-bottom:22px; display:flex; align-items:flex-start; gap:12px;">
+      <div class="timeline-gentle-note" data-reveal>
         <svg width="16" height="16" style="flex-shrink:0; margin-top:2px;" viewBox="0 0 24 24" fill="none" stroke="#2F6FEB" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
         <div style="font-size:13px; color:var(--text-secondary); line-height:1.6;">
-          <strong style="color:var(--text);">How to read this chart:</strong> The coloured lines show your personal wellness scores (Energy &amp; Comfort, scale 1–10). The dashed blue line shows the Air Quality Index (AQI, right axis). Where the AQI rises and wellness lines dip together, a pattern may be forming.
+          <strong style="color:var(--text);">Start with a day that stands out to you.</strong> Select a point to see your check-in, the environment, and your note together. The chart is here for context—not to judge your day.
         </div>
       </div>
 
       <!-- CHART + PANEL GRID -->
-      <div class="tl-grid">
+      <div class="tl-grid" data-reveal>
 
         <!-- CHART CARD -->
         <div class="card">
           <div class="chart-title-row">
             <div>
-              <h3 style="font-size:15px; font-weight:700; margin-bottom:4px;">Environment vs Wellness</h3>
-              <p class="secondary-text" style="font-size:12px;">Click a data point to see full details for that day</p>
+              <h3 style="font-size:15px; font-weight:700; margin-bottom:4px;">Your days, together</h3>
+              <p class="secondary-text" style="font-size:12px;">Select a point to open that day’s story.</p>
             </div>
             <div class="chart-legend-inline">
               <div class="legend-item">
@@ -319,17 +319,35 @@
             <div class="sp-note-box" id="panelNotesText">"Walked home from school."</div>
           </div>
         </div>
-      </div>
+        </div>
 
-    </main>
+        <div class="card" id="timelineActivityHistory" style="margin-top:28px; padding:24px; border:1px solid var(--border); box-shadow:0 10px 28px rgba(30,24,50,.07);" data-reveal>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px;">
+            <div>
+              <h2 class="section-heading" style="margin:0 0 6px;">Your activity history</h2>
+              <p class="secondary-text" style="margin:0;">Every activity you save appears here with its planned window and recorded conditions.</p>
+            </div>
+            <a class="btn btn-dark btn-sm" href="activity.html">Start an activity</a>
+          </div>
+          <div id="timelineActivityList" style="display:grid;gap:10px;">No activities recorded yet.</div>
+        </div>
+
+      </main>
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-analytics-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/firebase.js"></script>
 <script src="js/main.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   Chart.defaults.font.family = "'DM Sans', sans-serif";
-  Chart.defaults.color = "#8A939A";
+  const timelineDarkMode = document.body.classList.contains('dark-theme');
+  const timelineGridColor = timelineDarkMode ? '#30363d' : '#F0F5F4';
+  Chart.defaults.color = timelineDarkMode ? '#8B949E' : '#8A939A';
 
   const days = window.AIRGUARD ? window.AIRGUARD.daysData : [];
   let timelineChart = null;
@@ -404,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
           y: {
             position: "left", min: 1, max: 10,
             title: { display: true, text: "Wellness (1–10)", font: { size: 11 } },
-            grid: { color: "#F0F5F4" }
+            grid: { color: timelineGridColor }
           },
           y1: {
             position: "right", min: 30, max: 190,
@@ -438,9 +456,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const month = label.split(' ')[0] || '';
     const num = label.split(' ')[1] || '';
     document.getElementById("selectedDateTitle").textContent = `${month} ${num}`;
-    document.getElementById("panelEnergyNum").textContent = d.energy.toFixed(1);
-    document.getElementById("panelComfortNum").textContent = d.comfort.toFixed(1);
-    document.getElementById("panelEnvText").textContent = `AQI ${d.aqi} · ${d.temp}°C · ${d.humidity}% humidity`;
+    document.getElementById("panelEnergyNum").textContent = d.energy == null ? '—' : Number(d.energy).toFixed(1);
+    document.getElementById("panelComfortNum").textContent = d.comfort == null ? '—' : Number(d.comfort).toFixed(1);
+    document.getElementById("panelEnvText").textContent = `AQI ${d.aqi ?? '—'} · ${d.temp == null ? '—' : `${d.temp}°C`} · ${d.humidity == null ? '—' : `${d.humidity}% humidity`}`;
     const tagRow = document.getElementById("panelSymptomsRow");
     tagRow.innerHTML = d.symptoms.length
       ? d.symptoms.map(s => `<span class="tag">${s}</span>`).join('')
@@ -459,8 +477,8 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   renderTimelineChart(30);
-  const aug12 = days.find(d => d.dateLabel === 'Aug 12') || days[days.length - 4];
-  if (aug12) showDayDetail(aug12);
+  const mostRecent = days[days.length - 1];
+  if (mostRecent) showDayDetail(mostRecent);
 });
 </script>
 </body>
